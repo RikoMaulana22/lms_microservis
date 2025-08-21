@@ -3,7 +3,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
-import apiClient from '@/lib/axios';
+import attendanceApiClient from '@/lib/axiosAttendance';
 import { useAuth } from '@/contexts/AuthContext';
 import { FaArrowLeft } from 'react-icons/fa';
 import Link from 'next/link';
@@ -44,7 +44,7 @@ export default function AttendanceDetailPage() {
   const fetchData = useCallback(async () => {
     if (id) {
       try {
-        const response = await apiClient.get(`${process.env.NEXT_PUBLIC_API_URL_USER}/attendance/${id}`);
+        const response = await attendanceApiClient.get(`/attendance/${id}`);
         setAttendanceData(response.data);
       } catch (err) {
         setError('Gagal memuat data absensi.');

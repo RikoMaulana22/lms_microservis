@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, FormEvent, useEffect } from 'react';
-import apiClient from '@/lib/axios';
+import attendanceApiClient  from '@/lib/axiosAttendance';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast'; // Impor toast
 
@@ -46,7 +46,7 @@ export default function AddAttendanceModal({ isOpen, onClose, topicId, onAttenda
     const toastId = toast.loading("Menyimpan sesi absensi...");
 
     try {
-      await apiClient.post(`/attendance/topic/${topicId}`, { title, openTime, closeTime });
+      await attendanceApiClient.post(`/attendance/topic/${topicId}`, { title, openTime, closeTime });
       toast.success("Sesi absensi berhasil dibuat!", { id: toastId });
       onAttendanceAdded();
       onClose();

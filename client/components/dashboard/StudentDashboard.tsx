@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import apiClient from '@/lib/axios';
+import classContentApiClient from '@/lib/axiosClassContent';
+import announcementApiClient from '@/lib/axiosAnnouncement';
+import scheduleApiClient from '@/lib/axiosSchedule';
 import { User, ClassSummary, GroupedSubjects, Announcement, GlobalMaterial, ScheduleItem } from '@/types';
 import MyClassesSection from './MyClassesSection';
 import ClassBrowserSection from './ClassBrowserSection';
@@ -22,11 +24,11 @@ export default function StudentDashboard({ user }: { user: User }) {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const myClassesPromise = apiClient.get(`${process.env.NEXT_PUBLIC_API_URL_CLASS}/classes/student`);
-      const groupedSubjectsPromise = apiClient.get(`${process.env.NEXT_PUBLIC_API_URL_CLASS}/subjects/grouped`);
-      const announcementsPromise = apiClient.get(`${process.env.NEXT_PUBLIC_API_URL_ANNOUNCEMENT}/announcements`);
-      const globalMaterialsPromise = apiClient.get(`${process.env.NEXT_PUBLIC_API_URL_CLASS}/materials/global`);
-      const schedulePromise = apiClient.get(`${process.env.NEXT_PUBLIC_API_URL_CLASS}/schedules/my`);
+      const myClassesPromise = classContentApiClient.get(`/classes/student`);
+      const groupedSubjectsPromise = classContentApiClient.get(`/subjects/grouped`);
+      const announcementsPromise = announcementApiClient.get(`/announcements`);
+      const globalMaterialsPromise = classContentApiClient.get(`/materials/global`);
+      const schedulePromise = scheduleApiClient.get(`/schedules/my`);
 
       const [
         myClassesResponse, 

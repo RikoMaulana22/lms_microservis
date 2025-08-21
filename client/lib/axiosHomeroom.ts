@@ -1,14 +1,13 @@
 import axios from 'axios';
 
-const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL_ADMIN,
+const homeroomApiClient = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL_HOMEROOM,
   headers: {
         'Content-Type': 'application/json',
     },
 });
 
-// Interceptor untuk menambahkan token ke setiap request secara otomatis
-apiClient.interceptors.request.use(
+homeroomApiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -21,4 +20,4 @@ apiClient.interceptors.request.use(
   }
 );
 
-export default apiClient;
+export default homeroomApiClient;

@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
-import apiClient from '@/lib/axios';
+import assignmentApiClient from '@/lib/axiosAssignment';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
-import { AssignmentDetails, AssignmentType } from '@/types'; // Asumsi tipe ini ada
+import { AssignmentDetails, AssignmentType } from '@/types'; 
 
 interface EditAssignmentModalProps {
   isOpen: boolean;
@@ -36,7 +36,7 @@ export default function EditAssignmentModal({ isOpen, onClose, onAssignmentUpdat
         
         const loadingToast = toast.loading("Menyimpan perubahan...");
         try {
-            await apiClient.put(`/assignments/${assignment.id}`, formData);
+            await assignmentApiClient.put(`/assignments/${assignment.id}`, formData);
             toast.success("Tugas berhasil diperbarui.", { id: loadingToast });
             onAssignmentUpdated();
             onClose();

@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, FormEvent, useEffect } from 'react';
-import apiClient from '@/lib/axios';
+import classContentApiClient from '@/lib/axiosClassContent';
 import Modal from '@/components/ui/Modal';
 import { TopicInfo } from '@/types'; // Asumsikan tipe ini ada
 
@@ -32,7 +32,7 @@ export default function EditTopicModal({ isOpen, onClose, topic, onTopicUpdated 
     setIsLoading(true);
     setError(null);
     try {
-      await apiClient.put(`/topics/${topic.id}`, { title });
+      await classContentApiClient.put(`/topics/${topic.id}`, { title });
       onTopicUpdated();
       onClose();
     } catch (err: any) {

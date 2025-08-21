@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, notFound } from 'next/navigation';
-import apiClient from '@/lib/axios';
+import apiClient from '@/lib/axiosAdmin';
 import toast from 'react-hot-toast';
 import { FaCheck, FaTimes, FaInfoCircle } from 'react-icons/fa';
 import QuizNavigation from '@/components/quiz/QuizNavigation';

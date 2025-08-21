@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, FormEvent } from 'react';
-import apiClient from '@/lib/axios';
+import apiClient from '@/lib/axiosAdmin';
 import { FaFilePdf, FaTrash } from 'react-icons/fa';
 
 interface GlobalMaterial {

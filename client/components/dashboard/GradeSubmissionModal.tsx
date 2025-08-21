@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, FormEvent, useEffect } from 'react';
-import apiClient from '@/lib/axios';
+import apiClient from '@/lib/axiosAdmin';
 import Modal from '@/components/ui/Modal';
 import { Submission } from '@/types';
 import toast from 'react-hot-toast'; // <-- 1. IMPORT toast

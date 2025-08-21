@@ -3,7 +3,7 @@
 
 import { useState, FormEvent, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import apiClient from '@/lib/axios';
+import userApiClient from '@/lib/axiosUser';
 import toast from 'react-hot-toast';
 import { FaUserEdit, FaLock, FaChevronLeft } from 'react-icons/fa';
 import Link from 'next/link';
@@ -36,7 +36,7 @@ export default function ProfilePage() {
     const toastId = toast.loading('Memperbarui profil...');
     
     try {
-      await apiClient.put('/users/profile', { fullName });
+      await userApiClient.put('/users/profile', { fullName });
       toast.success('Profil berhasil diperbarui!', { id: toastId });
       revalidateUser(); // Panggil fungsi untuk memperbarui data user di context
     } catch (error: any) {
@@ -57,7 +57,7 @@ export default function ProfilePage() {
     const toastId = toast.loading('Mengubah password...');
 
     try {
-      await apiClient.put('/users/change-password', { currentPassword, newPassword });
+      await userApiClient.put('/users/change-password', { currentPassword, newPassword });
       toast.success('Password berhasil diubah!', { id: toastId });
       // Kosongkan field password setelah berhasil
       setCurrentPassword('');

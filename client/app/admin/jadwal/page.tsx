@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import apiClient from '@/lib/axios';
+import apiClient from '@/lib/axiosAdmin';
 import { FaTrash } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import AddScheduleModal from '@/components/dashboard/admin/AddScheduleModal';

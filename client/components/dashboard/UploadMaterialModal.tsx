@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
-import apiClient from '@/lib/axios';
+import classContentApiClient from '@/lib/axiosClassContent';
 
 interface UploadMaterialModalProps {
   isOpen: boolean;
@@ -37,7 +37,7 @@ export default function UploadMaterialModal({ isOpen, onClose, onUploadSuccess, 
     formData.append('file', file);
 
     try {
-      await apiClient.post(`/classes/${classId}/materials`, formData, {
+      await classContentApiClient.post(`/classes/${classId}/materials`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

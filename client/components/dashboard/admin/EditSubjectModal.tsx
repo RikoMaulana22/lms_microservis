@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, FormEvent, useEffect } from 'react';
-import apiClient from '@/lib/axios';
+import classContentApiClient from '@/lib/axiosClassContent';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
 
@@ -42,7 +42,7 @@ export default function EditSubjectModal({ isOpen, onClose, subject, onSubjectUp
     setIsLoading(true);
     const loadingToast = toast.loading('Memperbarui data...');
     try {
-      await apiClient.put(`/subjects/${subject.id}`, formData);
+      await classContentApiClient.put(`/subjects/${subject.id}`, formData);
       toast.success('Data berhasil diperbarui!', { id: loadingToast });
       onSubjectUpdated();
       onClose();

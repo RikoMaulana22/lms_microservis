@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation'; // <-- Import useRouter
-import apiClient from '@/lib/axios';
+import assignmentApiClient from '@/lib/axiosAssignment';
 import GradeSubmissionModal from '@/components/dashboard/GradeSubmissionModal';
 import { FaArrowLeft, FaEdit } from 'react-icons/fa'; // <-- Import ikon
 
@@ -37,7 +37,7 @@ export default function SubmissionsPage() {
         setIsLoading(true);
 
         // --- PERBAIKAN 3: Panggil endpoint yang sudah kita perbaiki di controller ---
-        apiClient.get(`${process.env.NEXT_PUBLIC_API_URL_ASSIGNMENT}/assignments/${assignmentId}/submissions`)
+        assignmentApiClient.get(`/assignments/${assignmentId}/submissions`)
             .then(response => setData(response.data))
             .catch(error => console.error("Gagal mengambil submissions:", error))
             .finally(() => setIsLoading(false));

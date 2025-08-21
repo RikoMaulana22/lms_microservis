@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, FormEvent } from 'react';
-import apiClient from '@/lib/axios';
+import announcementApiClient from '@/lib/axiosAnnouncement';
 import { FaTrash, FaBullhorn } from 'react-icons/fa';
 
 interface Announcement {
@@ -24,7 +24,7 @@ export default function ManageAnnouncementsPage() {
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const response = await apiClient.get(`${process.env.NEXT_PUBLIC_API_URL_ANNOUNCEMENT}/announcements/all`); // Panggil endpoint admin
+            const response = await announcementApiClient.get(`/announcements/all`); // Panggil endpoint admin
             setAnnouncements(response.data);
         } catch (error) {
             console.error("Gagal mengambil data:", error);
@@ -41,7 +41,7 @@ export default function ManageAnnouncementsPage() {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            await apiClient.post('/announcements', { title, content });
+            await announcementApiClient.post('/announcements', { title, content });
             alert('Pengumuman berhasil dibuat!');
             setTitle('');
             setContent('');
@@ -56,7 +56,7 @@ export default function ManageAnnouncementsPage() {
     const handleDelete = async (id: number) => {
         if (window.confirm('Yakin ingin menghapus pengumuman ini?')) {
             try {
-                await apiClient.delete(`/announcements/${id}`);
+                await announcementApiClient.delete(`/announcements/${id}`);
                 alert('Pengumuman berhasil dihapus.');
                 fetchData();
             } catch (error) {

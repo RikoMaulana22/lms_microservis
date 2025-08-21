@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, FormEvent, useEffect } from 'react';
-import apiClient from '@/lib/axios';
+import attendanceApiClient from '@/lib/axiosAttendance';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
 
@@ -42,7 +42,7 @@ export default function MarkAttendanceModal({ isOpen, onClose, onSuccess, attend
         }
 
         try {
-            await apiClient.post(`/attendance/${attendanceId}/record`, formData, {
+            await attendanceApiClient.post(`/attendance/${attendanceId}/record`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
             toast.success("Kehadiran berhasil dicatat!", { id: toastId });

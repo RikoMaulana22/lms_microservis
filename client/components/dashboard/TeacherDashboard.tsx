@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import apiClient from '@/lib/axios';
+import classContentApiClient from '@/lib/axiosClassContent';
+import announcementApiClient from '@/lib/axiosAnnouncement';
+import scheduleApiClient from '@/lib/axiosSchedule';
+
 import CreateClassModal from './CreateClassModal';
 import Link from 'next/link';
 import { User, ClassSummary, Announcement, GlobalMaterial, ScheduleItem } from '@/types';
@@ -26,10 +29,10 @@ export default function TeacherDashboard({ user }: { user: User }) {
         globalMaterialsResponse,
         schedulesResponse
       ] = await Promise.all([
-        apiClient.get(`${process.env.NEXT_PUBLIC_API_URL_CLASS}/classes/teacher`),
-        apiClient.get(`${process.env.NEXT_PUBLIC_API_URL_ANNOUNCEMENT}/announcements`),
-        apiClient.get(`${process.env.NEXT_PUBLIC_API_URL_GLOBAL_MATERIALS}/materials/global`),
-        apiClient.get(`${process.env.NEXT_PUBLIC_API_URL_SCHEDULE}/schedules/my`)
+        classContentApiClient.get(`/classes/teacher`),
+        announcementApiClient.get(`/announcements`),
+        classContentApiClient.get(`/materials/global`),
+        scheduleApiClient.get(`/schedules/my`)
       ]);
 
       setMyClasses(myClassesResponse.data);
@@ -57,7 +60,7 @@ export default function TeacherDashboard({ user }: { user: User }) {
     if (!confirmDelete) return;
 
     try {
-      await apiClient.delete(`${process.env.NEXT_PUBLIC_API_URL_CLASS}/classes/${classId}`);
+      await classContentApiClient.delete(`/classes/${classId}`);
       fetchData(); // Refresh data setelah penghapusan
     } catch (error) {
       console.error('Gagal menghapus kelas:', error);

@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
-import apiClient from '@/lib/axios';
+import classContentApiClient from '@/lib/axiosClassContent';
 import Modal from '@/components/ui/Modal'; // Impor komponen modal dasar
 
 interface AddTopicModalProps {
@@ -28,7 +28,7 @@ export default function AddTopicModal({ isOpen, onClose, classId, nextOrder, onT
     setError(null);
 
     try {
-      await apiClient.post(`/classes/${classId}/topics`, {
+      await classContentApiClient.post(`/classes/${classId}/topics`, {
         title,
         order: nextOrder,
       });

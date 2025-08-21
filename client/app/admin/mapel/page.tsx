@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import apiClient from '@/lib/axios';
+import apiClient from '@/lib/axiosAdmin';
 import toast from 'react-hot-toast';
 import AddSubjectModal from '@/components/dashboard/admin/AddSubjectModal';
 import EditSubjectModal from '@/components/dashboard/admin/EditSubjectModal';

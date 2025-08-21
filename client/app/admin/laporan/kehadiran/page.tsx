@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import apiClient from '@/lib/axios';
+import apiClient from '@/lib/axiosAdmin';
 
 // Definisikan tipe data untuk laporan
 interface AttendanceReportItem {

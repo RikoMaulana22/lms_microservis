@@ -2,7 +2,7 @@
 
 import { useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import apiClient from '@/lib/axios';
+import apiClient from '@/lib/axiosAdmin';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function AdminLoginPage() {

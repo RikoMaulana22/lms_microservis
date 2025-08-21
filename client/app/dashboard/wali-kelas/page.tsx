@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import apiClient from '@/lib/axios';
+import homeroomApiClient from '@/lib/axiosHomeroom';
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -41,7 +41,7 @@ const EditStudentDataModal = ({ student, onClose, onDataUpdated }: EditStudentDa
         if (!student) return;
         setIsLoading(true);
         try {
-            const res = await apiClient.get(`${process.env.NEXT_PUBLIC_API_URL_HOMEROOM}/homeroom/student/${student.id}`);
+            const res = await homeroomApiClient.get(`/homeroom/student/${student.id}`);
             setDetails(res.data);
         } catch (error) {
             toast.error("Gagal memuat detail siswa.");
@@ -61,7 +61,7 @@ const EditStudentDataModal = ({ student, onClose, onDataUpdated }: EditStudentDa
     }
 
     try {
-        await apiClient.put(`/homeroom/grades/${gradeId}`, { score: scoreValue });
+        await homeroomApiClient.put(`/homeroom/grades/${gradeId}`, { score: scoreValue });
         toast.success("Nilai berhasil diperbarui!");
         fetchDetails(); // Memuat ulang detail di dalam modal
         onDataUpdated(); // Memuat ulang data utama di dashboard
@@ -72,7 +72,7 @@ const EditStudentDataModal = ({ student, onClose, onDataUpdated }: EditStudentDa
 
 const handleAttendanceChange = async (attendanceId: number, newStatus: string) => {
      try {
-        await apiClient.put(`/homeroom/attendance/${attendanceId}`, { status: newStatus });
+        await homeroomApiClient.put(`/homeroom/attendance/${attendanceId}`, { status: newStatus });
         toast.success("Absensi berhasil diperbarui!");
         fetchDetails(); // Memuat ulang detail di dalam modal
         onDataUpdated(); // Memuat ulang data utama di dashboard
@@ -86,7 +86,7 @@ const handleAttendanceChange = async (attendanceId: number, newStatus: string) =
     async function handleDeleteAttendance(id: number): Promise<void> {
         if (!window.confirm('Apakah Anda yakin ingin menghapus catatan absensi ini?')) return;
         try {
-            await apiClient.delete(`/homeroom/attendance/${id}`);
+            await homeroomApiClient.delete(`/homeroom/attendance/${id}`);
             toast.success('Catatan absensi berhasil dihapus.');
             fetchDetails(); // Refresh detail data in modal
             onDataUpdated(); // Refresh main dashboard data
@@ -209,7 +209,7 @@ const openAttendanceDetailModal = (student: Student) => {
     const fetchData = useCallback(async () => {
          setIsLoading(true);
         try {
-            const response = await apiClient.get(`${process.env.NEXT_PUBLIC_API_URL_HOMEROOM}/homeroom/dashboard`);
+            const response = await homeroomApiClient.get(`/homeroom/dashboard`);
             setDashboardData(response.data);
             setError(null);
         } catch (err: any) {
@@ -239,7 +239,7 @@ const openAttendanceDetailModal = (student: Student) => {
     async function handleDelete(id: number): Promise<void> {
         if (!window.confirm('Apakah Anda yakin ingin menghapus data siswa ini?')) return;
         try {
-            await apiClient.delete(`/homeroom/student/${id}`);
+            await homeroomApiClient.delete(`/homeroom/student/${id}`);
             toast.success('Data siswa berhasil dihapus.');
             fetchData(); // Refresh dashboard data
         } catch (error) {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, FormEvent, useEffect } from 'react';
-import apiClient from '@/lib/axios';
+import assignmentApiClient from '@/lib/axiosAssignment';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
 import { FaPlus, FaTrash } from 'react-icons/fa';
@@ -156,7 +156,7 @@ export default function AddAssignmentModal({ isOpen, onClose, topicId, onAssignm
     }
 
     try {
-      await apiClient.post(`/assignments/topic/${topicId}`, payload);
+      await assignmentApiClient.post(`/assignments/topic/${topicId}`, payload);
       toast.success('Tugas berhasil dibuat!', { id: loadingToast });
       onAssignmentAdded();
       onClose();

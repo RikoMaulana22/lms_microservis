@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, ChangeEvent } from 'react';
-import apiClient from '@/lib/axios';
+import apiClient from '@/lib/axiosAdmin';
 import { User } from '@/types';
 import Link from 'next/link'; // <-- 1. Impor komponen Link
 import toast from 'react-hot-toast';

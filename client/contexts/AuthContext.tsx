@@ -3,7 +3,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { jwtDecode } from 'jwt-decode';
-import apiClient from '@/lib/axios';
+import apiClient from '@/lib/axiosAdmin';
 import { Settings, User } from '@/types';
 
 // Tipe untuk data yang didekode dari token JWT

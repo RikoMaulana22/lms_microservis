@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
-import apiClient from '@/lib/axios';
+import homeroomApiClient from '@/lib/axiosHomeroom';
 import toast from 'react-hot-toast';
 import Modal from '@/components/ui/Modal';
 import { User } from '@/types';
@@ -23,7 +23,7 @@ export default function AssignHomeroomModal({ isOpen, onClose, onSuccess, select
         if (isOpen) {
             const fetchTeachers = async () => {
                 try {
-                    const res = await apiClient.get('/admin/users?role=guru');
+                    const res = await homeroomApiClient.get('/admin/users?role=guru');
                     setTeachers(res.data);
                 } catch (error) {
                     toast.error("Gagal memuat daftar guru.");
@@ -39,7 +39,7 @@ export default function AssignHomeroomModal({ isOpen, onClose, onSuccess, select
         const toastId = toast.loading("Menyimpan...");
 
         try {
-            await apiClient.put(`/admin/classes/${selectedClass?.id}/assign-homeroom`, {
+            await homeroomApiClient.put(`/admin/classes/${selectedClass?.id}/assign-homeroom`, {
                 teacherId: selectedTeacherId // Kirim ID guru yang dipilih
             });
             toast.success("Wali kelas berhasil ditetapkan!", { id: toastId });

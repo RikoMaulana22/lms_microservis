@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import apiClient from '@/lib/axios';
 import { User } from '@/types';
-import Link from 'next/link'; // <-- 1. Impor komponen Link
+import Link from 'next/link'; 
+import userApiClient from '@/lib/axiosUser';
+
 
 export default function UserManagementPage() {
     const [users, setUsers] = useState<User[]>([]);
@@ -14,7 +15,7 @@ export default function UserManagementPage() {
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const response = await apiClient.get(`${process.env.NEXT_PUBLIC_API_URL_ADMIN}/admin/users`);
+               const response = await userApiClient.get('/admin/users');
                 setUsers(response.data);
             } catch (error) {
                 console.error("Gagal mengambil data pengguna:", error);

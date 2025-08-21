@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, FormEvent, useEffect, useRef } from 'react';
-import apiClient from '@/lib/axios';
+import classContentApiClient from '@/lib/axiosClassContent';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
 
@@ -60,12 +60,12 @@ export default function AddMaterialModal({ isOpen, onClose, topicId, onMaterialA
         formData.append('youtubeUrl', youtubeUrl);
         formData.append('file', file);
 
-        await apiClient.post(`/materials/topics/${topicId}`, formData, {
+        await classContentApiClient.post(`/materials/topics/${topicId}`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
       } else {
         const payload = { title, content, youtubeUrl };
-        await apiClient.post(`/materials/topics/${topicId}`, payload);
+        await classContentApiClient.post(`/materials/topics/${topicId}`, payload);
       }
       
       toast.success('Materi berhasil ditambahkan!', { id: toastId });

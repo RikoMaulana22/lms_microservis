@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
-import apiClient from '@/lib/axios';
+import classContentApiClient from '@/lib/axiosClassContent';
+import scheduleApiClient from '@/lib/axiosSchedule';
+import userApiClient from '@/lib/axiosUser';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
 import { User, Subject } from '@/types';
@@ -35,10 +37,10 @@ export default function AddScheduleModal({ isOpen, onClose, onScheduleAdded }: A
             const fetchDropdownData = async () => {
                 const loadingToast = toast.loading("Memuat data form...");
                 try {
-                    const classPromise = apiClient.get('/classes/all');
-                    const teacherPromise = apiClient.get('/admin/users?role=guru');
-                    const subjectPromise = apiClient.get('/subjects');
-                    
+                    const classPromise = classContentApiClient.get('/classes/all');
+                    const teacherPromise = userApiClient.get('/admin/users?role=guru');
+                    const subjectPromise = classContentApiClient.get('/subjects');
+
                     const [classRes, teacherRes, subjectRes] = await Promise.all([classPromise, teacherPromise, subjectPromise]);
                     
                     setClasses(classRes.data);
@@ -62,7 +64,7 @@ export default function AddScheduleModal({ isOpen, onClose, onScheduleAdded }: A
         setIsLoading(true);
         const loadingToast = toast.loading('Menyimpan jadwal...');
         try {
-            await apiClient.post('/schedules', formData);
+            await scheduleApiClient.post('/schedules', formData);
             toast.success('Jadwal baru berhasil ditambahkan!', { id: loadingToast });
             onScheduleAdded();
             handleClose();

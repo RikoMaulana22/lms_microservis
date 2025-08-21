@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, FormEvent, useEffect } from 'react';
-import apiClient from '@/lib/axios';
+import userApiClient from '@/lib/axiosUser';
 import Modal from '@/components/ui/Modal';
 import { User } from '@/types';
 import toast from 'react-hot-toast';
@@ -43,7 +43,7 @@ export default function EditUserModal({ isOpen, onClose, user, onUserUpdated }: 
       if (!dataToUpdate.password) delete (dataToUpdate as any).password;
       if (dataToUpdate.role !== 'siswa') delete (dataToUpdate as any).nisn;
 
-      await apiClient.put(`/admin/users/${user.id}`, dataToUpdate);
+      await userApiClient.put(`/admin/users/${user.id}`, dataToUpdate);
       toast.success('Data berhasil diperbarui!', { id: loadingToast });
       onUserUpdated();
       onClose();

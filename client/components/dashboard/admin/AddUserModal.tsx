@@ -2,7 +2,8 @@
 'use client';
 
 import { useState, FormEvent, useEffect } from 'react';
-import apiClient from '@/lib/axios';
+import userApiClient from '@/lib/axiosUser';
+import classContentApiClient from '@/lib/axiosClassContent';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
 
@@ -45,7 +46,7 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }: AddUserMo
     if (isOpen && formData.role === 'wali_kelas') {
       const fetchClasses = async () => {
         try {
-          const response = await apiClient.get('/admin/classes/available-for-homeroom');
+          const response = await classContentApiClient.get('/admin/classes/available-for-homeroom');
           setAvailableClasses(response.data);
         } catch (error) {
           toast.error("Gagal memuat daftar kelas.");
@@ -67,7 +68,7 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }: AddUserMo
       if (payload.role !== 'siswa') delete payload.nisn;
       if (payload.role !== 'wali_kelas') delete payload.homeroomClassId;
       
-      await apiClient.post('/admin/users', payload);
+      await userApiClient.post('/admin/users', payload);
       toast.success('Pengguna baru berhasil ditambahkan!', { id: toastId });
       onUserAdded();
       handleClose();

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import apiClient from '@/lib/axios';
+import apiClient from '@/lib/axiosAdmin';
 import AddClassModal from '@/components/dashboard/admin/AddClassModal';
 import Link from 'next/link';
 import toast from 'react-hot-toast'; // 1. Impor toast untuk notifikasi
