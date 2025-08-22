@@ -3,7 +3,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import classContentApiClient from '@/lib/axiosClassContent';
 import scheduleApiClient from '@/lib/axiosSchedule';
-import userApiClient from '@/lib/axiosUser';
+import adminApiClient from '@/lib/axiosAdmin';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
 import { User, Subject } from '@/types';
@@ -38,7 +38,7 @@ export default function AddScheduleModal({ isOpen, onClose, onScheduleAdded }: A
                 const loadingToast = toast.loading("Memuat data form...");
                 try {
                     const classPromise = classContentApiClient.get('/classes/all');
-                    const teacherPromise = userApiClient.get('/admin/users?role=guru');
+                    const teacherPromise = adminApiClient.get('/admin/users?role=guru');
                     const subjectPromise = classContentApiClient.get('/subjects');
 
                     const [classRes, teacherRes, subjectRes] = await Promise.all([classPromise, teacherPromise, subjectPromise]);

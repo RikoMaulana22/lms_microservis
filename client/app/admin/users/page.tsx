@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { User } from '@/types';
 import Link from 'next/link'; 
-import userApiClient from '@/lib/axiosUser';
+import adminApiClient from '@/lib/axiosAdmin';
 
 
 export default function UserManagementPage() {
@@ -15,7 +15,7 @@ export default function UserManagementPage() {
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-               const response = await userApiClient.get('/admin/users');
+               const response = await adminApiClient.get('/admin/users');
                 setUsers(response.data);
             } catch (error) {
                 console.error("Gagal mengambil data pengguna:", error);

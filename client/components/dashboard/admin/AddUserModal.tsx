@@ -2,10 +2,10 @@
 'use client';
 
 import { useState, FormEvent, useEffect } from 'react';
-import userApiClient from '@/lib/axiosUser';
 import classContentApiClient from '@/lib/axiosClassContent';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
+import adminApiClient from '@/lib/axiosAdmin';
 
 interface AddUserModalProps {
   isOpen: boolean;
@@ -68,7 +68,7 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }: AddUserMo
       if (payload.role !== 'siswa') delete payload.nisn;
       if (payload.role !== 'wali_kelas') delete payload.homeroomClassId;
       
-      await userApiClient.post('/admin/users', payload);
+      await adminApiClient.post('/users', payload);
       toast.success('Pengguna baru berhasil ditambahkan!', { id: toastId });
       onUserAdded();
       handleClose();

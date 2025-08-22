@@ -2,7 +2,7 @@
 
 import { useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import apiClient from '@/lib/axiosAdmin';
+import userApiClient from '@/lib/axiosUser'; // Import userApiClient
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function AdminLoginPage() {
@@ -27,7 +27,7 @@ export default function AdminLoginPage() {
         setIsLoading(true);
         setError(null);
         try {
-            const response = await apiClient.post(`${process.env.NEXT_PUBLIC_API_URL_ADMIN}/auth/login`, {
+            const response = await userApiClient.post(`/auth/login`, {
                 username,
                 password,
             });

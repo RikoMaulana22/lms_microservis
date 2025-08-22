@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import apiClient from '@/lib/axiosAdmin';
+import adminApiClient from '@/lib/axiosAdmin';
 import toast from 'react-hot-toast';
 import AddSubjectModal from '@/components/dashboard/admin/AddSubjectModal';
 import EditSubjectModal from '@/components/dashboard/admin/EditSubjectModal';
@@ -29,8 +29,8 @@ export default function ManageSubjectsPage() {
         setIsLoading(true);
         try {
             // Tambahkan parameter 'grade' ke request jika filter dipilih
-            const url = selectedGrade ? `${process.env.NEXT_PUBLIC_API_URL_SUBJECT}/subjects?grade=${selectedGrade}` : `${process.env.NEXT_PUBLIC_API_URL_SUBJECT}/subjects`;
-            const response = await apiClient.get(url);
+            const url = selectedGrade ? `/subjects?grade=${selectedGrade}` : `/subjects`;
+            const response = await adminApiClient.get(url);
             setSubjects(response.data);
         } catch (error) {
             console.error("Gagal mengambil data mapel:", error);
@@ -53,7 +53,7 @@ export default function ManageSubjectsPage() {
         if (window.confirm('Apakah Anda yakin ingin menghapus mata pelajaran ini? Ini mungkin akan gagal jika masih ada kelas yang menggunakan mapel ini.')) {
             const loadingToast = toast.loading('Menghapus...');
             try {
-                const response = await apiClient.delete(`/subjects/${subjectId}`);
+                const response = await adminApiClient.delete(`/subjects/${subjectId}`);
                 toast.success(response.data.message, { id: loadingToast });
                 fetchData();
             } catch (error: any) {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, ChangeEvent, FormEvent } from 'react';
-import userApiClient from '@/lib/axiosUser';
+import adminApiClient from '@/lib/axiosAdmin';
 import toast from 'react-hot-toast';
 
 export default function BulkImportPage() {
@@ -30,7 +30,7 @@ export default function BulkImportPage() {
         formData.append('role', role);
 
         try {
-            const response = await userApiClient.post('/admin/users/bulk', formData, {
+            const response = await adminApiClient.post('/users/bulk', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
             toast.success(response.data.message, { id: toastId, duration: 5000 });

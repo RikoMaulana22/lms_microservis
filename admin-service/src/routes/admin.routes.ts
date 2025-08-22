@@ -2,31 +2,34 @@
 
 import { Router } from 'express';
 // --- Impor semua fungsi dari controller admin ---
-import { getUsers,
-     createUser, 
-     updateUser, 
-     deleteUser,
-     getGlobalMaterialsAdmin,
-     uploadGlobalMaterial,
-     deleteGlobalMaterial,
-     getAttendanceReport,
-    getGradeReport,
-    assignHomeroomTeacher,
-    getAllClasses,
-    getAvailableClassesForHomeroom ,
-    getAllTeachers,
-    getAllSubjects,
-    createClass,
-    getClassEnrollments,
-    enrollStudent,
-    unenrollStudent,
-    bulkCreateUsers,
-    deleteClass,
-    testGetAllWaliKelas,
-  } from '../controllers/admin.controller';
+import {
+    getUsers,
+    createUser,
+    updateUser,
+    deleteUser,
+    getGlobalMaterialsAdmin,
+    uploadGlobalMaterial,
+    deleteGlobalMaterial,
+    getAttendanceReport,
+    getGradeReport,
+    assignHomeroomTeacher,
+    getAllClasses,
+    getAvailableClassesForHomeroom,
+    getAllTeachers,
+    getAllSubjects,
+    createClass,
+    getClassEnrollments,
+    enrollStudent,
+    unenrollStudent,
+    bulkCreateUsers,
+    deleteClass,
+    testGetAllWaliKelas,
+} from '../controllers/admin.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 import { checkRole } from '../middlewares/role.middleware';
 import { upload } from '../middlewares/upload.middleware';
+import { getSettings, updateSettings } from '../controllers/setting.controller';
+
 
 const router = Router();
 
@@ -85,5 +88,11 @@ router.get('/reports/grades', authenticate, checkRole('admin'), getGradeReport);
 // ===================================
 
 router.get('/test/walikelas', testGetAllWaliKelas);
+
+//==================================
+//setting
+//==================================
+router.get('/settings', getSettings); // Endpoint ini tidak perlu otentikasi
+router.put('/settings', authenticate, checkRole('admin'), updateSettings);
 
 export default router;

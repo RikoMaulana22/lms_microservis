@@ -3,25 +3,24 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { jwtDecode } from 'jwt-decode';
-import apiClient from '@/lib/axiosAdmin';
+import userApiClient from '@/lib/axiosUser';
+import adminApiClient from '@/lib/axiosAdmin';
 import { Settings, User } from '@/types';
 
-// Tipe untuk data yang didekode dari token JWT
 interface DecodedToken {
   userId: number;
   exp: number;
 }
 
-// Tipe untuk context, dengan penambahan baru
 interface AuthContextType {
   user: User | null;
   token: string | null;
   settings: Settings | null;
-  isAuthenticated: boolean; // <-- PENAMBAHAN 1: Flag untuk status login
+  isAuthenticated: boolean;
   isLoading: boolean;
-  login: (token: string, userData: User) => void;
+  login: (token: string, userData: User) => void; // Dikembalikan seperti semula
   logout: () => void;
-  revalidateUser: () => Promise<void>; // <-- PENAMBAHAN 2: Fungsi untuk refresh data user
+  revalidateUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,53 +31,57 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // --- PENAMBAHAN 3: Interceptor API Otomatis ---
-  // Efek ini akan berjalan setiap kali token berubah untuk mengatur header default pada apiClient
+  // Efek ini akan berjalan setiap kali token berubah untuk mengatur header default
   useEffect(() => {
-    if (token) {
-      apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    } else {
-      delete apiClient.defaults.headers.common['Authorization'];
-    }
+    const clients = [userApiClient, adminApiClient]; // Tambahkan semua axios client lain di sini
+    clients.forEach(client => {
+        if (token) {
+            client.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        } else {
+            delete client.defaults.headers.common['Authorization'];
+        }
+    });
   }, [token]);
+  
+  const logout = useCallback(() => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setToken(null);
+    setUser(null);
+  }, []);
 
-  // --- PENAMBAHAN 4: Fungsi untuk memvalidasi ulang data pengguna dari server ---
   const revalidateUser = useCallback(async () => {
     try {
-      const response = await apiClient.get(`${process.env.NEXT_PUBLIC_API_URL_USER}/auth/me`); // Endpoint untuk mengambil data user
+      const response = await userApiClient.get(`/me`);
       const freshUserData = response.data;
       setUser(freshUserData);
       localStorage.setItem('user', JSON.stringify(freshUserData));
     } catch (error) {
       console.error("Gagal memvalidasi ulang sesi, logout...", error);
-      logout(); // Jika gagal (misal token dicabut), logout paksa
+      logout();
     }
-  }, []);
+  }, [logout]);
 
-  // Inisialisasi aplikasi saat pertama kali dimuat
   useEffect(() => {
     const initializeApp = async () => {
       setIsLoading(true);
       
-      // Ambil pengaturan sistem
       try {
-        const settingsResponse = await apiClient.get(`${process.env.NEXT_PUBLIC_API_URL_SETTINGS}`);
+        const settingsResponse = await adminApiClient.get('/settings');
         setSettings(settingsResponse.data);
       } catch (error) {
         console.error("Gagal mengambil pengaturan sistem:", error);
       }
 
-      // Cek token di localStorage
       const storedToken = localStorage.getItem('token');
       if (storedToken) {
         try {
           const decodedToken: DecodedToken = jwtDecode(storedToken);
           if (decodedToken.exp * 1000 > Date.now()) {
             setToken(storedToken);
-            // Alih-alih langsung percaya localStorage, validasi ulang data user
             await revalidateUser();
           } else {
-            logout(); // Token kedaluwarsa
+            logout();
           }
         } catch (error) {
           console.error("Token tidak valid:", error);
@@ -89,20 +92,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     initializeApp();
-  }, [revalidateUser]); // Tambahkan revalidateUser sebagai dependensi
+  }, [revalidateUser, logout]);
 
+  // PERBAIKAN: Fungsi login dikembalikan untuk hanya menyimpan state
   const login = (newToken: string, userData: User) => {
     localStorage.setItem('token', newToken);
     localStorage.setItem('user', JSON.stringify(userData));
     setToken(newToken);
     setUser(userData);
-  };
-
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setToken(null);
-    setUser(null);
   };
 
   return (
@@ -111,10 +108,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       token,
       settings,
       isLoading,
-      isAuthenticated: !!user, // <-- Flag disediakan di sini
+      isAuthenticated: !!user,
       login,
       logout,
-      revalidateUser // <-- Fungsi disediakan di sini
+      revalidateUser
     }}>
       {children}
     </AuthContext.Provider>

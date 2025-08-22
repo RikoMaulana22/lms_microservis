@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, ChangeEvent } from 'react';
-import apiClient from '@/lib/axiosAdmin';
+import adminApiClient from '@/lib/axiosAdmin';
 import { User } from '@/types';
 import Link from 'next/link'; // <-- 1. Impor komponen Link
 import toast from 'react-hot-toast';
@@ -27,7 +27,7 @@ export default function ManageUsersPage() {
         
         try {
             // Panggilan API sekarang hanya menggunakan path relatif
-            const response = await apiClient.get(url);
+            const response = await adminApiClient.get(url);
             setUsers(response.data);
         } catch (error) {
             console.error("Gagal mengambil data pengguna:", error);
@@ -50,7 +50,7 @@ export default function ManageUsersPage() {
         if (window.confirm('Apakah Anda yakin ingin menghapus pengguna ini?')) {
             const loadingToast = toast.loading('Menghapus pengguna...');
             try {
-                await apiClient.delete(`/admin/users/${userId}`);
+                await adminApiClient.delete(`/users/${userId}`);
                 toast.success('Pengguna berhasil dihapus.', { id: loadingToast });
                 fetchData();
             } catch (error: any) {

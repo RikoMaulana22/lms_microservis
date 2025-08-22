@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import apiClient from '@/lib/axiosAdmin';
+import adminApiClient from '@/lib/axiosAdmin';
 
 // Definisikan tipe data untuk laporan
 interface AttendanceReportItem {
@@ -22,7 +22,7 @@ export default function AttendanceReportPage() {
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const response = await apiClient.get(`${process.env.NEXT_PUBLIC_API_URL_ADMIN}/admin/reports/attendance`);
+            const response = await adminApiClient.get(`/reports/attendance`);
             setReportData(response.data);
         } catch (error) {
             console.error("Gagal mengambil laporan:", error);

@@ -66,6 +66,82 @@ const prisma = new PrismaClient();
 //     }
 // };
 
+export const getUsers = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        fullName: true,
+        username: true,
+        email: true,
+        role: true,
+        nisn: true,
+        createdAt: true
+      }
+    });
+    res.status(200).json(users);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ message: "Failed to fetch users." });
+  }
+};
+
+// Fungsi baru untuk impor pengguna massal
+export const bulkImportUsers = async (req: Request, res: Response): Promise<void> => {
+    // Implementasi logika impor massal di sini
+    // Ini membutuhkan library seperti 'papaparse' untuk memproses file CSV
+    // dan logika untuk membuat banyak user sekaligus
+    res.status(501).json({ message: "Bulk import function not yet implemented." });
+};
+
+// Fungsi baru untuk membuat satu pengguna baru (dari AddUserModal)
+export const createUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { fullName, username, password, email, role, nisn, homeroomClassId } = req.body;
+    
+    // Validasi input
+    if (!fullName || !username || !password || !email || !role) {
+      res.status(400).json({ message: 'Semua field wajib diisi' });
+      return;
+    }
+    
+    // Cek apakah username atau email sudah ada
+    const existingUser = await prisma.user.findFirst({
+        where: { OR: [{ username }, { email }] }
+    });
+    if (existingUser) {
+        res.status(409).json({ message: 'Username atau email sudah terdaftar.' });
+        return;
+    }
+    
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    const newUser = await prisma.user.create({
+      data: {
+        fullName,
+        username,
+        email,
+        password: hashedPassword,
+        role,
+        nisn: role === 'siswa' ? nisn : null,
+      },
+      select: {
+        id: true,
+        fullName: true,
+        username: true,
+        email: true,
+        role: true,
+        nisn: true,
+      }
+    });
+
+    res.status(201).json({ message: "Pengguna berhasil ditambahkan.", user: newUser });
+    
+  } catch (error) {
+    console.error("Error creating user:", error);
+    res.status(500).json({ message: "Gagal menambahkan pengguna." });
+  }
+};
 
 export const loginUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -115,27 +191,24 @@ export const loginAdmin = async (req: Request, res: Response): Promise<void> => 
             return;
         }
         
-        // 1. Cari pengguna berdasarkan username
         const user = await prisma.user.findUnique({ where: { username } });
         if (!user) {
-            res.status(404).json({ message: 'Akun admin tidak ditemukan' });
+            res.status(404).json({ message: 'Akun tidak ditemukan' });
             return;
         }
 
-        // 2. Validasi Peran (Role) - INI YANG PALING PENTING
+        // VALIDASI PERAN: Pastikan pengguna adalah admin
         if (user.role !== 'admin') {
-            res.status(403).json({ message: 'Akses ditolak. Akun ini bukan admin.' });
+            res.status(403).json({ message: 'Akses ditolak. Anda bukan admin.' });
             return;
         }
 
-        // 3. Validasi Password
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
             res.status(401).json({ message: 'Password salah' });
             return;
         }
 
-        // 4. Buat Token jika semua validasi berhasil
         const payload: TokenPayload = { userId: user.id, role: user.role };
         const token = jwt.sign(payload, process.env.JWT_SECRET as string, { expiresIn: '1d' });
 

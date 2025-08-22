@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import apiClient from '@/lib/axiosAdmin';
+import adminApiClient from '@/lib/axiosAdmin';
 
 // Definisikan tipe data untuk item laporan
 interface GradeReportItem {
@@ -20,7 +20,7 @@ export default function GradeReportPage() {
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const response = await apiClient.get(`${process.env.NEXT_PUBLIC_API_URL_ADMIN}/admin/reports/grades`);
+            const response = await adminApiClient.get(`/reports/grades`);
             setReportData(response.data);
         } catch (error) {
             console.error("Gagal mengambil laporan nilai:", error);

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, FormEvent } from 'react';
-import apiClient from '@/lib/axiosAdmin';
+import adminApiClient from '@/lib/axiosAdmin';
 
 interface Settings {
     schoolName?: string;
@@ -16,7 +16,7 @@ export default function SettingsPage() {
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const response = await apiClient.get(`${process.env.NEXT_PUBLIC_API_URL_SETTINGS}/settings`);
+            const response = await adminApiClient.get(`${process.env.NEXT_PUBLIC_API_URL_ADMIN}/settings`);
             setSettings(response.data);
         } catch (error) {
             console.error("Gagal mengambil pengaturan:", error);
@@ -38,7 +38,7 @@ export default function SettingsPage() {
         e.preventDefault();
         setIsSaving(true);
         try {
-            await apiClient.post('/settings', settings);
+            await adminApiClient.post('/settings', settings);
             alert('Pengaturan berhasil disimpan!');
         } catch (error) {
             alert('Gagal menyimpan pengaturan.');

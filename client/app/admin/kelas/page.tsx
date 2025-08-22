@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import apiClient from '@/lib/axiosAdmin';
+import adminApiClient from '@/lib/axiosAdmin';
 import AddClassModal from '@/components/dashboard/admin/AddClassModal';
 import Link from 'next/link';
 import toast from 'react-hot-toast'; // 1. Impor toast untuk notifikasi
@@ -28,9 +28,9 @@ export default function ClassManagementPage() {
         setIsLoading(true);
         try {
             // Tambahkan parameter 'grade' ke request jika filter dipilih
-            const url = selectedGrade ? `${process.env.NEXT_PUBLIC_API_URL_ADMIN}/admin/classes?grade=${selectedGrade}` 
-            : `${process.env.NEXT_PUBLIC_API_URL_ADMIN}/admin/classes`;
-            const response = await apiClient.get(url);
+            const url = selectedGrade ? `${process.env.NEXT_PUBLIC_API_URL_ADMIN}/classes?grade=${selectedGrade}` 
+            : `${process.env.NEXT_PUBLIC_API_URL_ADMIN}/classes`;
+            const response = await adminApiClient.get(url);
             setClasses(response.data);
         } catch (error) {
             console.error("Gagal mengambil data kelas:", error);
@@ -52,7 +52,7 @@ export default function ClassManagementPage() {
 
         const toastId = toast.loading('Menghapus kelas...');
         try {
-            await apiClient.delete(`${process.env.NEXT_PUBLIC_API_URL_ADMIN}/admin/classes/${classId}`);
+            await adminApiClient.delete(`/classes/${classId}`);
             toast.success('Kelas berhasil dihapus.', { id: toastId });
             fetchData();// Muat ulang data setelah berhasil dihapus
         } catch (error) {
@@ -121,7 +121,7 @@ export default function ClassManagementPage() {
                                     {/* 6. Tambahkan tombol Hapus */}
                                     <td className="px-6 py-4 border border-gray-300 whitespace-nowrap space-x-4">
                                         <Link 
-                                            href={`/admin/classes/${cls.id}/enroll`}
+                                            href={`/classes/${cls.id}/enroll`}
                                             className="text-blue-600 hover:underline font-semibold text-sm"
                                         >
                                             Kelola Pendaftaran

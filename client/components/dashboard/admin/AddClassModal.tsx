@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
-import userApiClient from '@/lib/axiosUser';
-import classContentApiClient from '@/lib/axiosClassContent';
+import adminApiClient from '@/lib/axiosAdmin';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
 
@@ -29,8 +28,8 @@ export default function AddClassModal({ isOpen, onClose, onClassCreated }: AddCl
             const fetchPrerequisites = async () => {
                 try {
                     const [teachersRes, subjectsRes] = await Promise.all([
-                        userApiClient.get('/admin/teachers'),
-                        classContentApiClient.get('/subjects')
+                        adminApiClient.get('/admin/teachers'),
+                        adminApiClient.get('/subjects')
                     ]);
                     setTeachers(teachersRes.data);
                     setSubjects(subjectsRes.data);
@@ -47,7 +46,7 @@ export default function AddClassModal({ isOpen, onClose, onClassCreated }: AddCl
         setIsLoading(true);
         const toastId = toast.loading("Membuat kelas...");
         try {
-            await classContentApiClient.post('/classes', { name, description, subjectId, teacherId });
+            await adminApiClient.post('/classes', { name, description, subjectId, teacherId });
             toast.success("Kelas berhasil dibuat!", { id: toastId });
             onClassCreated();
             onClose();

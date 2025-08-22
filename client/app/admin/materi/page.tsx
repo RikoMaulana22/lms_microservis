@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, FormEvent } from 'react';
-import apiClient from '@/lib/axiosAdmin';
+import adminApiClient from '@/lib/axiosAdmin';
 import { FaFilePdf, FaTrash } from 'react-icons/fa';
 
 interface GlobalMaterial {
@@ -23,7 +23,7 @@ export default function ManageGlobalMaterialsPage() {
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const response = await apiClient.get(`${process.env.NEXT_PUBLIC_API_URL_ADMIN}/admin/materials/global`);
+            const response = await adminApiClient.get(`/materials/global`);
             setMaterials(response.data);
         } catch (error) {
             console.error("Gagal mengambil materi global:", error);
@@ -49,7 +49,7 @@ export default function ManageGlobalMaterialsPage() {
         
         setIsUploading(true);
         try {
-            await apiClient.post('/admin/materials/global', formData, {
+            await adminApiClient.post('/materials/global', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
             alert('Materi berhasil diunggah!');
@@ -66,7 +66,7 @@ export default function ManageGlobalMaterialsPage() {
     const handleDelete = async (materialId: number) => {
         if (window.confirm('Yakin ingin menghapus materi ini?')) {
             try {
-                await apiClient.delete(`/admin/materials/global/${materialId}`);
+                await adminApiClient.delete(`/materials/global/${materialId}`);
                 alert('Materi berhasil dihapus.');
                 fetchData();
             } catch (error) {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
-import apiClient from '@/lib/axiosAdmin';
+import adminApiClient from '@/lib/axiosAdmin';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import { FaArrowLeft } from 'react-icons/fa';
@@ -56,7 +56,7 @@ export default function EnrollManagementPage() {
         // Set loading hanya pada fetch pertama
         if (!data) setIsLoading(true);
         try {
-            const response = await apiClient.get(`${process.env.NEXT_PUBLIC_API_URL_ADMIN}/admin/classes/${classId}/enrollments`);
+            const response = await adminApiClient.get(`/classes/${classId}/enrollments`);
             setData(response.data);
         } catch (error) {
             toast.error("Gagal memuat data.");
@@ -77,7 +77,7 @@ export default function EnrollManagementPage() {
             return;
         }
         try {
-            await apiClient.post(`/admin/classes/${classId}/enrollments`, { studentId: selectedStudentId });
+            await adminApiClient.post(`/classes/${classId}/enrollments`, { studentId: selectedStudentId });
             toast.success("Siswa berhasil didaftarkan!");
             setSelectedStudentId('');
             fetchData(); // Muat ulang data
@@ -90,7 +90,7 @@ export default function EnrollManagementPage() {
     const handleUnenroll = async (studentId: number) => {
         if (window.confirm("Apakah Anda yakin ingin mengeluarkan siswa ini dari kelas?")) {
             try {
-                await apiClient.delete(`/admin/classes/${classId}/enrollments/${studentId}`);
+                await adminApiClient.delete(`/classes/${classId}/enrollments/${studentId}`);
                 toast.success("Siswa berhasil dikeluarkan!");
                 fetchData(); // Muat ulang data
             } catch (error: any) {
@@ -106,7 +106,7 @@ export default function EnrollManagementPage() {
             return;
         }
         try {
-            await apiClient.put(`/admin/classes/${classId}/homeroom`, { teacherId: selectedTeacherId });
+            await adminApiClient.put(`/classes/${classId}/homeroom`, { teacherId: selectedTeacherId });
             toast.success("Wali kelas berhasil ditetapkan!");
             fetchData(); // Muat ulang data untuk menampilkan wali kelas baru
         } catch (error: any) {
@@ -124,7 +124,7 @@ export default function EnrollManagementPage() {
         <div className="container mx-auto p-4 md:p-8 text-gray-800">
             {/* Header Halaman */}
             <div className="flex items-center gap-4 mb-6">
-                <Link href="/admin/kelas" className="p-2 rounded-full hover:bg-gray-200 transition-colors">
+                <Link href="/kelas" className="p-2 rounded-full hover:bg-gray-200 transition-colors">
                     <FaArrowLeft size={20} className="text-gray-600" />
                 </Link>
                 <div>
