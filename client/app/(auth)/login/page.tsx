@@ -1,153 +1,73 @@
-// Path: src/contexts/AuthContext.tsx
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { jwtDecode } from 'jwt-decode';
-import userApiClient from '@/lib/axiosUser';
-import adminApiClient from '@/lib/axiosAdmin'; // <-- PERBAIKAN 1: Impor axiosAdmin
-import { Settings, User } from '@/types';
+import { useState, FormEvent } from 'react';
+import axios from 'axios';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import userApiClient from '@/lib/axiosUser'; // Mengganti import axios
 
-// Tipe untuk data yang didekode dari token JWT
-interface DecodedToken {
-  userId: number;
-  exp: number;
-}
-
-// Tipe untuk context, dengan penambahan baru
-interface AuthContextType {
-  user: User | null;
-  token: string | null;
-  settings: Settings | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  error: string | null; // State untuk pesan error
-  login: (username: string, password: string) => Promise<boolean>; // Fungsi login yang melakukan API call
-  logout: () => void;
-  revalidateUser: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [settings, setSettings] = useState<Settings | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export default function LoginPage() {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const { login } = useAuth();
+  const router = useRouter();
 
-  // Mengatur header Authorization secara otomatis setiap kali token berubah
-  useEffect(() => {
-    const clients = [userApiClient, adminApiClient /*, dan client axios lainnya */];
-    clients.forEach(client => {
-        if (token) {
-            client.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        } else {
-            delete client.defaults.headers.common['Authorization'];
-        }
-    });
-  }, [token]);
-
-  const logout = useCallback(() => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setToken(null);
-    setUser(null);
-  }, []);
-
-  // Fungsi untuk memvalidasi ulang data pengguna dari server
-  const revalidateUser = useCallback(async () => {
-    try {
-      // <-- PERBAIKAN 2: Endpoint diperbaiki dari /auth/me menjadi /me
-      const response = await userApiClient.get(`/me`);
-      const freshUserData = response.data;
-      setUser(freshUserData);
-      localStorage.setItem('user', JSON.stringify(freshUserData));
-    } catch (error) {
-      console.error("Gagal memvalidasi ulang sesi, logout...", error);
-      logout(); // Jika gagal (misal token dicabut), logout paksa
-    }
-  }, [logout]);
-
-  // Inisialisasi aplikasi saat pertama kali dimuat
-  useEffect(() => {
-    const initializeApp = async () => {
-      setIsLoading(true);
-      
-      // Ambil pengaturan sistem dari admin-service
-      try {
-        // <-- PERBAIKAN 3: Menggunakan adminApiClient dan path yang benar
-        const settingsResponse = await adminApiClient.get('/settings');
-        setSettings(settingsResponse.data);
-      } catch (error) {
-        console.error("Gagal mengambil pengaturan sistem:", error);
-      }
-
-      const storedToken = localStorage.getItem('token');
-      if (storedToken) {
-        try {
-          const decodedToken: DecodedToken = jwtDecode(storedToken);
-          if (decodedToken.exp * 1000 > Date.now()) {
-            setToken(storedToken);
-            await revalidateUser();
-          } else {
-            logout();
-          }
-        } catch (error) {
-          console.error("Token tidak valid:", error);
-          logout();
-        }
-      }
-      setIsLoading(false);
-    };
-
-    initializeApp();
-  }, [revalidateUser, logout]);
-
-  // <-- PERBAIKAN 4: Fungsi login yang lengkap dengan pemanggilan API
-  const login = async (username: string, password: string) => {
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
     setIsLoading(true);
     setError(null);
-    try {
-      const response = await userApiClient.post('/login', { username, password });
-      const { token: newToken, user: userData } = response.data;
 
-      localStorage.setItem('token', newToken);
-      localStorage.setItem('user', JSON.stringify(userData));
-      setToken(newToken);
-      setUser(userData);
+    try {
       
-      return true; // Login berhasil
+      const response = await userApiClient.post('/auth/login', {
+        username,
+        password,
+      });
+
+      // Panggil fungsi login dari context untuk menyimpan token
+      login(response.data.token,  response.data.user);
+      
+      // Arahkan ke dashboard setelah berhasil login
+      router.push('/dashboard');
+
     } catch (err: any) {
-      console.error("Login gagal:", err);
-      setError(err.response?.data?.message || 'Username atau password salah.');
-      return false; // Login gagal
+      if (axios.isAxiosError(err) && err.response) {
+        setError(err.response.data.message);
+      } else {
+        setError('Terjadi kesalahan. Coba lagi nanti.');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-
   return (
-    <AuthContext.Provider value={{
-      user,
-      token,
-      settings,
-      isLoading,
-      isAuthenticated: !!user,
-      error,
-      login,
-      logout,
-      revalidateUser
-    }}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
+     <div className="flex min-h-screen items-center justify-center bg-gray-100">
+      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
+        <h1 className="text-2xl font-bold  text-gray-800 text-center">Masuk ke SPADA</h1>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Username</label>
+            <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required className="mt-1 block w-full px-3 py-2 border border-gray-600 text-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Password</label>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="mt-1 block w-full px-3 py-2 border border-gray-600 text-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+          </div>
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+          <button type="submit" disabled={isLoading} className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:bg-blue-300">
+            {isLoading ? 'Memproses...' : 'Masuk'}
+          </button>
+        </form>
+        {/* <p className="text-center text-sm text-gray-600">
+          Belum punya akun? <Link href="/register" className="text-blue-600 hover:underline">Daftar di sini</Link>
+        </p> */}
+      </div>
+    </div>
+  )
+}

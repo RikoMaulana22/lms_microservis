@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import classContentApiClient from '@/lib/axiosClassContent';
+import adminApiClient from '@/lib/axiosAdmin';
 import announcementApiClient from '@/lib/axiosAnnouncement';
 import scheduleApiClient from '@/lib/axiosSchedule';
 
@@ -29,7 +30,7 @@ export default function TeacherDashboard({ user }: { user: User }) {
         globalMaterialsResponse,
         schedulesResponse
       ] = await Promise.all([
-        classContentApiClient.get(`/classes/teacher`),
+        adminApiClient.get(`/classes/teacher`),
         announcementApiClient.get(`/announcements`),
         classContentApiClient.get(`/materials/global`),
         scheduleApiClient.get(`/schedules/my`)
