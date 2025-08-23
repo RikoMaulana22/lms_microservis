@@ -1,0 +1,126 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.deleteSubject = exports.updateSubject = exports.createSubject = exports.getGroupedSubjects = exports.getAllSubjects = void 0;
+const client_1 = require("@prisma/client");
+const prisma = new client_1.PrismaClient();
+const getAllSubjects = async (req, res, next) => {
+    try {
+        // 1. Ambil parameter 'grade' dari query URL
+        const { grade } = req.query;
+        let whereCondition = {}; // Gunakan objek biasa untuk kondisi `where`
+        // 2. Siapkan klausa 'where' untuk Prisma
+        // 3. Jika ada parameter 'grade', tambahkan kondisi filter
+        if (grade && typeof grade === 'string') {
+            whereCondition = { grade: parseInt(grade, 10) };
+        }
+        const subjects = await prisma.subject.findMany({
+            where: whereCondition, // 4. Gunakan klausa 'where' yang dinamis
+            orderBy: [
+                { grade: 'asc' },
+                { name: 'asc' }
+            ]
+        });
+        res.status(200).json(subjects);
+    }
+    catch (error) {
+        console.error("Gagal mengambil data mata pelajaran:", error);
+        res.status(500).json({ message: 'Gagal mengambil data mata pelajaran' });
+    }
+};
+exports.getAllSubjects = getAllSubjects;
+// Pastikan fungsi ini memiliki blok 'include' kembali
+const getGroupedSubjects = async (req, res, next) => {
+    try {
+        const subjects = await prisma.subject.findMany({
+            orderBy: [
+                { grade: 'asc' },
+                { name: 'asc' }
+            ],
+            // 'include' ini penting untuk menampilkan daftar kelas di bawah subjek
+            include: {
+                Class: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
+                    orderBy: {
+                        name: 'asc'
+                    }
+                }
+            }
+        });
+        const grouped = subjects.reduce((acc, subject) => {
+            const grade = subject.grade.toString();
+            if (!acc[grade]) {
+                acc[grade] = [];
+            }
+            acc[grade].push(subject);
+            return acc;
+        }, {});
+        res.status(200).json(grouped);
+    }
+    catch (error) {
+        // ERROR SEBENARNYA AKAN MUNCUL DI CONSOLE.ERROR INI DI TERMINAL BACKEND
+        console.error("Gagal mengambil data mata pelajaran terkelompok:", error);
+        res.status(500).json({ message: 'Gagal mengambil data mata pelajaran' });
+    }
+};
+exports.getGroupedSubjects = getGroupedSubjects;
+// --- FUNGSI BARU UNTUK ADMIN ---
+// Membuat mata pelajaran baru
+const createSubject = async (req, res) => {
+    const { name, grade } = req.body;
+    if (!name || !grade) {
+        res.status(400).json({ message: 'Nama dan tingkatan kelas wajib diisi.' });
+        return;
+    }
+    try {
+        const newSubject = await prisma.subject.create({
+            data: { name, grade: Number(grade) },
+        });
+        res.status(201).json(newSubject);
+    }
+    catch (error) {
+        console.error("Gagal membuat mapel:", error);
+        res.status(500).json({ message: 'Gagal membuat mata pelajaran.' });
+    }
+};
+exports.createSubject = createSubject;
+// Mengupdate mata pelajaran
+const updateSubject = async (req, res) => {
+    const { id } = req.params;
+    const { name, grade } = req.body;
+    try {
+        const updatedSubject = await prisma.subject.update({
+            where: { id: Number(id) },
+            data: { name, grade: Number(grade) },
+        });
+        res.status(200).json(updatedSubject);
+    }
+    catch (error) {
+        console.error("Gagal mengupdate mapel:", error);
+        res.status(500).json({ message: 'Gagal mengupdate mata pelajaran.' });
+    }
+};
+exports.updateSubject = updateSubject;
+// Menghapus mata pelajaran
+const deleteSubject = async (req, res) => {
+    const { id } = req.params;
+    try {
+        // Cek apakah ada kelas yang masih menggunakan mapel ini
+        const relatedClasses = await prisma.class.count({ where: { subjectId: Number(id) } });
+        if (relatedClasses > 0) {
+            res.status(400).json({ message: `Tidak bisa menghapus, masih ada ${relatedClasses} kelas yang menggunakan mata pelajaran ini.` });
+            return;
+        }
+        await prisma.subject.delete({
+            where: { id: Number(id) },
+        });
+        res.status(200).json({ message: 'Mata pelajaran berhasil dihapus.' });
+    }
+    catch (error) {
+        console.error("Gagal menghapus mapel:", error);
+        res.status(500).json({ message: 'Gagal menghapus mata pelajaran.' });
+    }
+};
+exports.deleteSubject = deleteSubject;

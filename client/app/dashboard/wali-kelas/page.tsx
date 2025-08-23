@@ -54,32 +54,32 @@ const EditStudentDataModal = ({ student, onClose, onDataUpdated }: EditStudentDa
     useEffect(() => { fetchDetails(); }, [fetchDetails]);
 
     const handleGradeChange = async (gradeId: number, newScore: string) => {
-    const scoreValue = parseFloat(newScore);
-    if (isNaN(scoreValue) || scoreValue < 0 || scoreValue > 100) {
-        toast.error("Nilai harus berupa angka antara 0 dan 100.");
-        return;
-    }
+        const scoreValue = parseFloat(newScore);
+        if (isNaN(scoreValue) || scoreValue < 0 || scoreValue > 100) {
+            toast.error("Nilai harus berupa angka antara 0 dan 100.");
+            return;
+        }
 
-    try {
-        await homeroomApiClient.put(`/homeroom/grades/${gradeId}`, { score: scoreValue });
-        toast.success("Nilai berhasil diperbarui!");
-        fetchDetails(); // Memuat ulang detail di dalam modal
-        onDataUpdated(); // Memuat ulang data utama di dashboard
-    } catch (error) {
-        toast.error("Gagal memperbarui nilai.");
-    }
-};
+        try {
+            await homeroomApiClient.put(`/homeroom/grades/${gradeId}`, { score: scoreValue });
+            toast.success("Nilai berhasil diperbarui!");
+            fetchDetails(); // Memuat ulang detail di dalam modal
+            onDataUpdated(); // Memuat ulang data utama di dashboard
+        } catch (error) {
+            toast.error("Gagal memperbarui nilai.");
+        }
+    };
 
-const handleAttendanceChange = async (attendanceId: number, newStatus: string) => {
-     try {
-        await homeroomApiClient.put(`/homeroom/attendance/${attendanceId}`, { status: newStatus });
-        toast.success("Absensi berhasil diperbarui!");
-        fetchDetails(); // Memuat ulang detail di dalam modal
-        onDataUpdated(); // Memuat ulang data utama di dashboard
-    } catch (error) {
-        toast.error("Gagal memperbarui absensi.");
-    }
-};
+    const handleAttendanceChange = async (attendanceId: number, newStatus: string) => {
+        try {
+            await homeroomApiClient.put(`/homeroom/attendance/${attendanceId}`, { status: newStatus });
+            toast.success("Absensi berhasil diperbarui!");
+            fetchDetails(); // Memuat ulang detail di dalam modal
+            onDataUpdated(); // Memuat ulang data utama di dashboard
+        } catch (error) {
+            toast.error("Gagal memperbarui absensi.");
+        }
+    };
 
     if (!student) return null;
 
@@ -101,55 +101,55 @@ const handleAttendanceChange = async (attendanceId: number, newStatus: string) =
                 <h2 className="text-xl font-bold mb-4">Kelola Data: {student.fullName}</h2>
                 {isLoading ? <p>Memuat detail...</p> : (
                     <div className="flex-grow overflow-y-auto pr-2 space-y-6">
-    {/* Bagian Nilai */}
-    <div>
-        <h3 className="font-semibold text-lg mb-2">Perbarui Nilai</h3>
-        <div className="space-y-2">
-            {details?.grades.map(grade => (
-                <div key={grade.id} className="grid grid-cols-3 items-center gap-2 p-2 bg-gray-50 rounded">
-                    <span className="col-span-2 text-sm">{grade.component.subject.name} - {grade.component.name}</span>
-                    <input 
-                        type="number" 
-                        defaultValue={grade.score} 
-                        onBlur={(e) => handleGradeChange(grade.id, e.target.value)} 
-                        className="form-input w-full text-center" 
-                    />
-                </div>
-            ))}
-            {details?.grades.length === 0 && <p className="text-sm text-gray-500">Belum ada nilai.</p>}
-        </div>
-    </div>
-    {/* Bagian Absensi */}
-    <div>
-        <h3 className="font-semibold text-lg mb-2">Perbarui Absensi Harian</h3>
-         <div className="space-y-2">
-            {details?.dailyAttendances.map(att => (
-                <div key={att.id} className="grid grid-cols-3 items-center gap-2 p-2 bg-gray-50 rounded">
-                    <span className="col-span-2 text-sm">
-                        {new Date(att.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                    </span>
-                    <select 
-                        defaultValue={att.status} 
-                        onChange={(e) => handleAttendanceChange(att.id, e.target.value)} 
-                        className="form-select w-full"
-                    >
-                        <option value="HADIR">Hadir</option>
-                        <option value="SAKIT">Sakit</option>
-                        <option value="IZIN">Izin</option>
-                        <option value="ALPA">Alpa</option>
-                    </select>
-                    <button
-                     onClick={() => handleDeleteAttendance(att.id)}
-                     className="text-red-600 hover:underline text-sm font-semibold"
-                     >
-                     Hapus
-                     </button>
-                </div>
-            ))}
-            {details?.dailyAttendances.length === 0 && <p className="text-sm text-gray-500">Belum ada catatan absensi.</p>}
-        </div>
-    </div>
-</div>
+                        {/* Bagian Nilai */}
+                        <div>
+                            <h3 className="font-semibold text-lg mb-2">Perbarui Nilai</h3>
+                            <div className="space-y-2">
+                                {details?.grades.map(grade => (
+                                    <div key={grade.id} className="grid grid-cols-3 items-center gap-2 p-2 bg-gray-50 rounded">
+                                        <span className="col-span-2 text-sm">{grade.component.subject.name} - {grade.component.name}</span>
+                                        <input
+                                            type="number"
+                                            defaultValue={grade.score}
+                                            onBlur={(e) => handleGradeChange(grade.id, e.target.value)}
+                                            className="form-input w-full text-center"
+                                        />
+                                    </div>
+                                ))}
+                                {details?.grades.length === 0 && <p className="text-sm text-gray-500">Belum ada nilai.</p>}
+                            </div>
+                        </div>
+                        {/* Bagian Absensi */}
+                        <div>
+                            <h3 className="font-semibold text-lg mb-2">Perbarui Absensi Harian</h3>
+                            <div className="space-y-2">
+                                {details?.dailyAttendances.map(att => (
+                                    <div key={att.id} className="grid grid-cols-3 items-center gap-2 p-2 bg-gray-50 rounded">
+                                        <span className="col-span-2 text-sm">
+                                            {new Date(att.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                        </span>
+                                        <select
+                                            defaultValue={att.status}
+                                            onChange={(e) => handleAttendanceChange(att.id, e.target.value)}
+                                            className="form-select w-full"
+                                        >
+                                            <option value="HADIR">Hadir</option>
+                                            <option value="SAKIT">Sakit</option>
+                                            <option value="IZIN">Izin</option>
+                                            <option value="ALPA">Alpa</option>
+                                        </select>
+                                        <button
+                                            onClick={() => handleDeleteAttendance(att.id)}
+                                            className="text-red-600 hover:underline text-sm font-semibold"
+                                        >
+                                            Hapus
+                                        </button>
+                                    </div>
+                                ))}
+                                {details?.dailyAttendances.length === 0 && <p className="text-sm text-gray-500">Belum ada catatan absensi.</p>}
+                            </div>
+                        </div>
+                    </div>
                 )}
                 <div className="flex justify-end pt-4 border-t mt-4">
                     <button onClick={onClose} className="btn-secondary">Tutup</button>
@@ -167,7 +167,7 @@ export default function HomeroomDashboardPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState('manage');
-    
+
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
@@ -175,57 +175,57 @@ export default function HomeroomDashboardPage() {
     const [selectedStudentIdForNote, setSelectedStudentIdForNote] = useState<string>('');
     const [isAttendanceDetailModalOpen, setIsAttendanceDetailModalOpen] = useState(false);
 
-const openAttendanceDetailModal = (student: Student) => {
+    const openAttendanceDetailModal = (student: Student) => {
         setSelectedStudent(student);
         setIsAttendanceDetailModalOpen(true);
     };
 
     // --- HOOKS useMemo DIPINDAHKAN KE ATAS ---
-    const students: Student[] = useMemo(() => 
+    const students: Student[] = useMemo(() =>
         dashboardData?.members.map((member: any) => member.user) || [],
         [dashboardData]
     );
 
     const attendanceRecap = useMemo(() => {
-    if (!dashboardData || !Array.isArray(dashboardData.dailyAttendances)) {
-        return {}; // Jika data belum ada atau bukan array, kembalikan objek kosong
-    }
-
-    const recap: Record<number, { HADIR: number, SAKIT: number, IZIN: number, ALPA: number }> = {};
-    students.forEach(student => {
-        recap[student.id] = { HADIR: 0, SAKIT: 0, IZIN: 0, ALPA: 0 };
-    });
-
-    // Kode ini sekarang aman untuk dijalankan
-    dashboardData.dailyAttendances.forEach((rec: { studentId: number; status: string; }) => {
-        if (recap[rec.studentId] && rec.status in recap[rec.studentId]) {
-            recap[rec.studentId][rec.status as 'HADIR' | 'SAKIT' | 'IZIN' | 'ALPA']++;
+        if (!dashboardData || !Array.isArray(dashboardData.dailyAttendances)) {
+            return {}; // Jika data belum ada atau bukan array, kembalikan objek kosong
         }
-    });
-    return recap;
-}, [dashboardData, students]);
+
+        const recap: Record<number, { HADIR: number, SAKIT: number, IZIN: number, ALPA: number }> = {};
+        students.forEach(student => {
+            recap[student.id] = { HADIR: 0, SAKIT: 0, IZIN: 0, ALPA: 0 };
+        });
+
+        // Kode ini sekarang aman untuk dijalankan
+        dashboardData.dailyAttendances.forEach((rec: { studentId: number; status: string; }) => {
+            if (recap[rec.studentId] && rec.status in recap[rec.studentId]) {
+                recap[rec.studentId][rec.status as 'HADIR' | 'SAKIT' | 'IZIN' | 'ALPA']++;
+            }
+        });
+        return recap;
+    }, [dashboardData, students]);
     // --- AKHIR PEMINDAHAN ---
 
     const fetchData = useCallback(async () => {
-         setIsLoading(true);
+        setIsLoading(true);
         try {
-            const response = await homeroomApiClient.get(`/homeroom/dashboard`);
+            const response = await homeroomApiClient.get(`/homeroom`);
             setDashboardData(response.data);
             setError(null);
         } catch (err: any) {
             setError(err.response?.data?.message || 'Gagal memuat data.');
         } finally {
-             setIsLoading(false);
+            setIsLoading(false);
         }
     }, []);
 
     useEffect(() => { fetchData(); }, [fetchData]);
-    
+
     const openEditModal = (student: Student) => {
         setSelectedStudent(student);
         setIsEditModalOpen(true);
     };
-     const openViewModal = (student: Student) => {
+    const openViewModal = (student: Student) => {
         setSelectedStudent(student);
         setIsViewModalOpen(true);
     };
@@ -252,7 +252,7 @@ const openAttendanceDetailModal = (student: Student) => {
             {isEditModalOpen && <EditStudentDataModal student={selectedStudent} onClose={() => setIsEditModalOpen(false)} onDataUpdated={fetchData} />}
             {isViewModalOpen && <ViewTranscriptModal student={selectedStudent} className={dashboardData.name} onClose={() => setIsViewModalOpen(false)} />}
 
-            <AttendanceDetailModal 
+            <AttendanceDetailModal
                 isOpen={isAttendanceDetailModalOpen}
                 onClose={() => setIsAttendanceDetailModalOpen(false)}
                 student={selectedStudent}
@@ -272,55 +272,55 @@ const openAttendanceDetailModal = (student: Student) => {
                     </nav>
                 </div>
 
-               <div className="mt-6">
-    {activeTab === 'manage' && (
-        <div className="grid grid-cols-1 md:grid-cols-3  text-gray-800 gap-6">
-            <div className="md:col-span-1">
-                <h3 className="text-lg font-semibold mb-2">Tambah Catatan Baru</h3>
-                <form onSubmit={handleAddNote} className="space-y-4 p-4 bg-white rounded-lg shadow">
-                    <div>
-                        <label className="block text-sm font-medium">Pilih Siswa</label>
-                        <select value={selectedStudentIdForNote} onChange={(e) => setSelectedStudentIdForNote(e.target.value)} className="form-select mt-1 w-full" required>
-                            <option value="">-- Pilih Siswa --</option>
-                            {students.map((student) => <option key={student.id} value={student.id}>{student.fullName}</option>)}
-                        </select>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium">Isi Catatan</label>
-                        <textarea value={noteContent} onChange={(e) => setNoteContent(e.target.value)} rows={5} className="form-textarea w-full mt-1" placeholder={`Tulis catatan...`}></textarea>
-                    </div>
-                    <button type="submit" className="btn-primary w-full">Simpan Catatan</button>
-                </form>
-            </div>
-            <div className="md:col-span-2 bg-white p-4 rounded-lg shadow">
-                <h3 className="font-semibold mb-2">Daftar Siswa</h3>
-                <p className="text-sm text-gray-600 mb-4">Pilih siswa untuk mengedit nilai & absensi.</p>
-                <div className="overflow-x-auto max-h-96">
-                    <table className="min-w-full divide-y">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium uppercase">Nama Siswa</th>
-                                <th className="px-6 py-3 text-center text-xs font-medium uppercase">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y">
-                            {students.map((student) => (
-                                <tr key={student.id}>
-                                    <td className="px-6 py-4 font-medium">{student.fullName}</td>
-                                    <td className="px-6 py-4 text-center">
-                                        <button onClick={() => openEditModal(student)} className="btn-primary text-sm">
-                                            Kelola Data
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    )}
-    {activeTab === 'attendance' && (
+                <div className="mt-6">
+                    {activeTab === 'manage' && (
+                        <div className="grid grid-cols-1 md:grid-cols-3  text-gray-800 gap-6">
+                            <div className="md:col-span-1">
+                                <h3 className="text-lg font-semibold mb-2">Tambah Catatan Baru</h3>
+                                <form onSubmit={handleAddNote} className="space-y-4 p-4 bg-white rounded-lg shadow">
+                                    <div>
+                                        <label className="block text-sm font-medium">Pilih Siswa</label>
+                                        <select value={selectedStudentIdForNote} onChange={(e) => setSelectedStudentIdForNote(e.target.value)} className="form-select mt-1 w-full" required>
+                                            <option value="">-- Pilih Siswa --</option>
+                                            {students.map((student) => <option key={student.id} value={student.id}>{student.fullName}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium">Isi Catatan</label>
+                                        <textarea value={noteContent} onChange={(e) => setNoteContent(e.target.value)} rows={5} className="form-textarea w-full mt-1" placeholder={`Tulis catatan...`}></textarea>
+                                    </div>
+                                    <button type="submit" className="btn-primary w-full">Simpan Catatan</button>
+                                </form>
+                            </div>
+                            <div className="md:col-span-2 bg-white p-4 rounded-lg shadow">
+                                <h3 className="font-semibold mb-2">Daftar Siswa</h3>
+                                <p className="text-sm text-gray-600 mb-4">Pilih siswa untuk mengedit nilai & absensi.</p>
+                                <div className="overflow-x-auto max-h-96">
+                                    <table className="min-w-full divide-y">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-6 py-3 text-left text-xs font-medium uppercase">Nama Siswa</th>
+                                                <th className="px-6 py-3 text-center text-xs font-medium uppercase">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y">
+                                            {students.map((student) => (
+                                                <tr key={student.id}>
+                                                    <td className="px-6 py-4 font-medium">{student.fullName}</td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <button onClick={() => openEditModal(student)} className="btn-primary text-sm">
+                                                            Kelola Data
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {activeTab === 'attendance' && (
                         <div className="bg-white p-4 rounded-lg text-gray-800 shadow">
                             <h3 className="text-lg font-semibold mb-4">Rekapitulasi Absensi Harian</h3>
                             <div className="overflow-x-auto">
@@ -346,13 +346,13 @@ const openAttendanceDetailModal = (student: Student) => {
                                                 <td className="px-6 py-4 text-center font-semibold">{attendanceRecap[student.id]?.ALPA || 0}</td>
                                                 {/* Tambah sel dengan tombol View */}
                                                 <td className="px-6 py-4 text-center space-x-4">
-                                                    <button 
+                                                    <button
                                                         onClick={() => openAttendanceDetailModal(student)}
                                                         className="text-blue-600 hover:underline font-semibold text-sm"
                                                     >
                                                         View
                                                     </button>
-                                                    
+
                                                 </td>
                                             </tr>
                                         ))}
@@ -361,54 +361,54 @@ const openAttendanceDetailModal = (student: Student) => {
                             </div>
                         </div>
                     )}
-    {activeTab === 'grades' && (
-        <div className="bg-white p-4 rounded-lg shadow text-gray-800">
-            <h3 className="text-lg font-semibold mb-4">Cetak Transkrip Nilai Siswa</h3>
-            <div className="overflow-x-auto">
-                <table className="min-w-full divide-y">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium uppercase">Nama Siswa</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium uppercase">NISN</th>
-                            <th className="px-6 py-3 text-center text-xs font-medium uppercase">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                        {students.map((student) => (
-                            <tr key={student.id}>
-    <td className="px-6 py-4 font-medium">{student.fullName}</td>
-    <td className="px-6 py-4 text-gray-500">{student.nisn || 'N/A'}</td>
-    
-    {/* --- PERUBAHAN DI SINI --- */}
-    <td className="px-6 py-4 text-center">
-        {/* Gunakan flexbox untuk mengatur jarak tombol */}
-        <div className="flex items-center justify-center gap-x-5 ">
-            {/* Tombol View dengan warna hijau */}
-            <button
-             onClick={() => openViewModal(student)}
-                className="bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded text-sm"
-            >
-            View 
-            </button>
-            
-            {/* Tombol Cetak Transkrip
+                    {activeTab === 'grades' && (
+                        <div className="bg-white p-4 rounded-lg shadow text-gray-800">
+                            <h3 className="text-lg font-semibold mb-4">Cetak Transkrip Nilai Siswa</h3>
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="px-6 py-3 text-left text-xs font-medium uppercase">Nama Siswa</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium uppercase">NISN</th>
+                                            <th className="px-6 py-3 text-center text-xs font-medium uppercase">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y">
+                                        {students.map((student) => (
+                                            <tr key={student.id}>
+                                                <td className="px-6 py-4 font-medium">{student.fullName}</td>
+                                                <td className="px-6 py-4 text-gray-500">{student.nisn || 'N/A'}</td>
+
+                                                {/* --- PERUBAHAN DI SINI --- */}
+                                                <td className="px-6 py-4 text-center">
+                                                    {/* Gunakan flexbox untuk mengatur jarak tombol */}
+                                                    <div className="flex items-center justify-center gap-x-5 ">
+                                                        {/* Tombol View dengan warna hijau */}
+                                                        <button
+                                                            onClick={() => openViewModal(student)}
+                                                            className="bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded text-sm"
+                                                        >
+                                                            View
+                                                        </button>
+
+                                                        {/* Tombol Cetak Transkrip
             <button
                 onClick={() => generateTranscriptPDF(student, dashboardData.gradeComponents, dashboardData.name)}
                 className="btn-secondary text-sm"
             >
                 Cetak Transkrip
             </button> */}
-        </div>
-    </td>
-    {/* --- AKHIR PERUBAHAN --- */}
-</tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    )}
-</div>
+                                                    </div>
+                                                </td>
+                                                {/* --- AKHIR PERUBAHAN --- */}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
         </>
     );

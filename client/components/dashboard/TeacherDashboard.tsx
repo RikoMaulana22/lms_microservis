@@ -1,11 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import classContentApiClient from '@/lib/axiosClassContent';
-import adminApiClient from '@/lib/axiosAdmin';
-import announcementApiClient from '@/lib/axiosAnnouncement';
-import scheduleApiClient from '@/lib/axiosSchedule';
-
+import apiClient from '@/lib/axios';
 import CreateClassModal from './CreateClassModal';
 import Link from 'next/link';
 import { User, ClassSummary, Announcement, GlobalMaterial, ScheduleItem } from '@/types';
@@ -30,10 +26,10 @@ export default function TeacherDashboard({ user }: { user: User }) {
         globalMaterialsResponse,
         schedulesResponse
       ] = await Promise.all([
-        adminApiClient.get(`/classes/teacher`),
-        announcementApiClient.get(`/announcements`),
-        classContentApiClient.get(`/materials/global`),
-        scheduleApiClient.get(`/schedules/my`)
+        apiClient.get('/classes/teacher'),
+        apiClient.get('/announcements'),
+        apiClient.get('/materials/global'),
+        apiClient.get('/schedules/my')
       ]);
 
       setMyClasses(myClassesResponse.data);
@@ -61,7 +57,7 @@ export default function TeacherDashboard({ user }: { user: User }) {
     if (!confirmDelete) return;
 
     try {
-      await classContentApiClient.delete(`/classes/${classId}`);
+      await apiClient.delete(`/classes/${classId}`);
       fetchData(); // Refresh data setelah penghapusan
     } catch (error) {
       console.error('Gagal menghapus kelas:', error);
@@ -69,7 +65,7 @@ export default function TeacherDashboard({ user }: { user: User }) {
     }
   };
 
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5007';
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
 
   return (
     <>
