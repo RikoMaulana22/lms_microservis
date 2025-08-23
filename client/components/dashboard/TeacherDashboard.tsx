@@ -1,9 +1,16 @@
+// client/components/dashboard/TeacherDashboard.tsx
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import apiClient from '@/lib/axios';
-import CreateClassModal from './CreateClassModal';
 import Link from 'next/link';
+
+// --- PERUBAHAN UTAMA: Impor semua klien Axios yang relevan ---
+import classContentApiClient from '@/lib/axiosClassContent';
+import announcementApiClient from '@/lib/axiosAnnouncement'; // Pastikan file ini ada
+import scheduleApiClient from '@/lib/axiosSchedule';       // Pastikan file ini ada
+
+import CreateClassModal from './CreateClassModal';
 import { User, ClassSummary, Announcement, GlobalMaterial, ScheduleItem } from '@/types';
 import AnnouncementSection from './AnnouncementSection';
 import GlobalMaterialsSection from './GlobalMaterialsSection';
@@ -26,10 +33,11 @@ export default function TeacherDashboard({ user }: { user: User }) {
         globalMaterialsResponse,
         schedulesResponse
       ] = await Promise.all([
-        apiClient.get('/classes/teacher'),
-        apiClient.get('/announcements'),
-        apiClient.get('/materials/global'),
-        apiClient.get('/schedules/my')
+        // --- PERUBAHAN UTAMA: Gunakan klien yang benar untuk setiap panggilan ---
+        classContentApiClient.get('/classes/teacher'),
+        announcementApiClient.get('/announcements'),
+        classContentApiClient.get('/materials/global'),
+        scheduleApiClient.get('/schedules/my')
       ]);
 
       setMyClasses(myClassesResponse.data);
@@ -57,7 +65,8 @@ export default function TeacherDashboard({ user }: { user: User }) {
     if (!confirmDelete) return;
 
     try {
-      await apiClient.delete(`/classes/${classId}`);
+      // --- PERUBAHAN UTAMA: Gunakan klien yang benar untuk menghapus kelas ---
+      await classContentApiClient.delete(`/classes/${classId}`);
       fetchData(); // Refresh data setelah penghapusan
     } catch (error) {
       console.error('Gagal menghapus kelas:', error);
@@ -65,7 +74,8 @@ export default function TeacherDashboard({ user }: { user: User }) {
     }
   };
 
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL_CLASS_CONTENT?.replace('/api', '') || 'http://localhost:5002';
+
 
   return (
     <>
@@ -98,9 +108,8 @@ export default function TeacherDashboard({ user }: { user: User }) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {myClasses.length > 0 ? (
                 myClasses.map((cls) => (
-                  // --- PERBAIKAN STRUKTUR KARTU DIMULAI DI SINI ---
                   <div key={cls.id} className="border rounded-lg overflow-hidden hover:shadow-lg transition-all flex flex-col">
-                    {/* Bagian Gambar (tidak lagi di dalam Link) */}
+                    {/* Bagian Gambar */}
                     <div className="h-32 bg-gray-200 flex items-center justify-center">
                        {cls.imageUrl ? (
                          <img src={`${backendUrl}${cls.imageUrl}`} alt={cls.name} className="h-full w-full object-cover"/>
@@ -111,7 +120,6 @@ export default function TeacherDashboard({ user }: { user: User }) {
                     {/* Bagian Teks */}
                     <div className="p-4 flex flex-col justify-between flex-grow">
                       <div>
-                        {/* Link hanya membungkus judul */}
                         <Link href={`/kelas/${cls.id}`}>
                           <h3 className="font-bold text-lg text-gray-800 hover:text-blue-600 hover:underline cursor-pointer">{cls.name}</h3>
                         </Link>
@@ -119,7 +127,7 @@ export default function TeacherDashboard({ user }: { user: User }) {
                         <p className="text-sm mt-2 font-semibold text-gray-700">{cls._count.members} Siswa</p>
                       </div>
                     </div>
-                    {/* Bagian Tombol Edit/Hapus (tidak lagi di dalam Link) */}
+                    {/* Bagian Tombol Edit/Hapus */}
                     <div className="p-4 border-t flex gap-4">
                       <button onClick={() => handleEditClass(cls.id.toString())} className="text-blue-600 hover:underline text-sm">Edit</button>
                       <button onClick={() => handleDeleteClass(cls.id.toString())} className="text-red-600 hover:underline text-sm">Hapus</button>

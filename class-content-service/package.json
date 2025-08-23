@@ -4,12 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-  "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-  "build": "tsc",
-  "start": "node dist/index.js",
-  "seed": "ts-node --project tsconfig.json prisma/seed.ts"
-
-},
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "seed": "ts-node --project tsconfig.json prisma/seed.ts"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",

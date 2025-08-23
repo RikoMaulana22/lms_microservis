@@ -7,7 +7,10 @@ import homeroomRoutes from './routes/homeroom.routes';
 dotenv.config();
 const app: Express = express();
 const PORT = Number(process.env.PORT) || 5005;
-
+app.use(cors({
+  origin: 'http://localhost:3000', // Alamat frontend Anda
+  credentials: true, // Izinkan pengiriman cookie atau token
+}));
 app.use(cors());
 app.use(express.json());
 app.use('/api/homeroom', homeroomRoutes);

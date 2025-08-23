@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const classContentApiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL_CLASS_CONTENT,
+  baseURL: process.env.NEXT_PUBLIC_API_URL_CLASS,
   headers: {
         'Content-Type': 'application/json',
     },

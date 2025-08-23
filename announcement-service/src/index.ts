@@ -7,7 +7,10 @@ import announcementRoutes from '../src/routes/announcement.routes';
 dotenv.config();
 const app: Express = express();
 const PORT = Number(process.env.PORT) || 5006;
-
+app.use(cors({
+  origin: 'http://localhost:3000', // Alamat frontend Anda
+  credentials: true, // Izinkan pengiriman cookie atau token
+}));
 app.use(cors());
 app.use(express.json());
 app.use('/api/announcements', announcementRoutes);

@@ -3,7 +3,6 @@
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-
 // Import semua rute yang relevan untuk layanan ini
 import classRoutes from './routes/class.routes';
 import subjectRoutes from './routes/subject.routes';
@@ -15,7 +14,10 @@ dotenv.config();
 const app: Express = express();
 const PORT = Number(process.env.PORT) || 5002; // Gunakan port unik, misal 5002
 const HOST = '0.0.0.0';
-
+app.use(cors({
+  origin: 'http://localhost:3000', // Alamat frontend Anda
+  credentials: true, // Izinkan pengiriman cookie atau token
+}));
 app.use(cors());
 app.use(express.json());
 

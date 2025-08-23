@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, FormEvent, useMemo } from 'react';
+import adminApiClient from '@/lib/axiosAdmin';
 import classContentApiClient from '@/lib/axiosClassContent';
 import { Subject } from '@/types'; // Pastikan Anda memiliki file types/index.ts
 
@@ -39,7 +40,7 @@ export default function CreateClassModal({ isOpen, onClose, onClassCreated }: Cr
 
       const fetchSubjects = async () => {
         try {
-          const response = await classContentApiClient.get(`/subjects`);
+          const response = await classContentApiClient.get('/subjects');
           setAllSubjects(response.data);
         } catch (error) {
           console.error('Gagal mengambil mata pelajaran', error);
