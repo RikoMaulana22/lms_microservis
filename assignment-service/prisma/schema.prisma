@@ -10,73 +10,82 @@ datasource db {
 }
 
 // --- ENUMS ---
-enum AssignmentType {
+enum QuestionType {
   pilgan
   esai
-  upload_gambar
-  link_google
 }
 
 // --- MODELS ---
 model Assignment {
-  id           Int            @id @default(autoincrement())
+  id           Int      @id @default(autoincrement())
   title        String
-  description  String?        @db.Text
-  type         AssignmentType
+  description  String?  @db.Text
   dueDate      DateTime
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
   topicId      Int?
-  
-  externalUrl  String?        @db.Text
+
+  // Pengaturan Kuis/Tugas
+  externalUrl  String?  @db.Text
   startTime    DateTime?
   endTime      DateTime?
   timeLimit    Int?
-  attemptLimit Int?           @default(1)
-  passingGrade Int?           @default(70)
-  
-  questions    Question[]
+  attemptLimit Int?     @default(1)
+  passingGrade Int?     @default(70)
+
+  // --- PERUBAHAN 1: Relasi diubah menjadi many-to-many ---
+  // Menghubungkan tugas ini ke banyak soal dari bank soal
+  questions    Question[] @relation("AssignmentQuestions")
+
   submissions  Submission[]
 }
 
+// Model untuk BANK SOAL
 model Question {
-  id           Int        @id @default(autoincrement())
-  questionText String     @db.Text
-  
-  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
-  assignmentId Int
-  
+  id           Int          @id @default(autoincrement())
+  questionText String       @db.Text
+  type         QuestionType // Menggunakan Enum baru untuk tipe soal
+
+  // --- PERUBAHAN 2: Menambahkan metadata untuk Bank Soal ---
+  topic        String?      // Kategori soal, misal: "Aljabar", "Sejarah Kemerdekaan"
+  authorId     Int          // Menyimpan ID guru yang membuat soal
+
+  // --- PERUBAHAN 3: Relasi diubah dan foreign key dihapus ---
+  // Menghapus `assignmentId` karena soal tidak lagi milik satu tugas
   options      Option[]
+
+  // Menghubungkan satu soal ke banyak tugas
+  assignments  Assignment[] @relation("AssignmentQuestions")
 }
 
 model Option {
-  id         Int     @id @default(autoincrement())
-  optionText String
-  isCorrect  Boolean @default(false)
-  explanation  String?
-  
+  id          Int     @id @default(autoincrement())
+  optionText  String
+  isCorrect   Boolean @default(false)
+  explanation String?
+
   question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
   questionId Int
 }
 
 model Submission {
-  id              Int        @id @default(autoincrement())
-  submissionDate  DateTime   @default(now())
-  score           Float?
-  essayAnswer     String?    @db.Text
-  fileUrl         String?
-  studentId       Int
-  
-  assignment      Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
-  assignmentId    Int
+  id             Int       @id @default(autoincrement())
+  submissionDate DateTime  @default(now())
+  score          Float?
+  essayAnswer    String?   @db.Text
+  fileUrl        String?
+  studentId      Int
 
-  updatedAt       DateTime   @updatedAt
-  
+  assignment     Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  assignmentId   Int
+
+  updatedAt      DateTime  @updatedAt
+
   selectedOptions Json?
-  startedOn       DateTime?
-  completedOn     DateTime?
-  timeTakenMs     Int?
+  startedOn      DateTime?
+  completedOn    DateTime?
+  timeTakenMs    Int?
 
   @@unique([studentId, assignmentId])
 }

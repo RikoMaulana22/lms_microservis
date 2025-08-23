@@ -6,7 +6,7 @@ import fs from 'fs';
 import { Request } from 'express';
 
 // Tentukan direktori penyimpanan
-const storageDir = 'public/uploads/materials';
+const storageDir = path.join(__dirname, '../../../public/uploads/materials');
 
 // Pastikan direktori ada, jika tidak, buat direktorinya
 if (!fs.existsSync(storageDir)) {
@@ -37,7 +37,7 @@ const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilt
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
         'application/vnd.ms-powerpoint', // .ppt
         'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
-
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'text/csv',
         'application/csv',
         'application/vnd.ms-excel'

@@ -27,6 +27,35 @@ interface CreateAssignmentBody {
     passingGrade?: number;
 }
 
+export const createAssignmentFromBank = async (req: Request, res: Response) => {
+    const { topicId } = req.params;
+    const { title, description, dueDate, questionIds } = req.body;
+
+    if (!title || !dueDate || !questionIds || !questionIds.length) {
+        return res.status(400).json({ message: 'Judul, tanggal tenggat, dan minimal satu soal wajib diisi.' });
+    }
+
+    try {
+        const newAssignment = await prisma.assignment.create({
+            data: {
+                title,
+                description,
+                dueDate: new Date(dueDate),
+                topicId: parseInt(topicId),
+                // Hubungkan tugas dengan soal-soal yang ada menggunakan ID
+                questions: {
+                    connect: questionIds.map((id: number) => ({ id })),
+                },
+            },
+        });
+        res.status(201).json(newAssignment);
+    } catch (error) {
+        console.error("Error creating assignment from bank:", error);
+        res.status(500).json({ message: 'Gagal membuat tugas.' });
+    }
+};
+
+
 export const getSubmissionForReview = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const { id } = req.params;

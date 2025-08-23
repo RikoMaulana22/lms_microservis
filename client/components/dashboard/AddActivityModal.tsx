@@ -19,38 +19,59 @@ export default function AddActivityModal({
   onSelectAssignment,
   onSelectAttendance,
 }: AddActivityModalProps) {
+  // Langsung return komponen Modal tanpa div pembungkus tambahan
   return (
-    <div className="grid grid-cols-1 bg-white text-gray-800 md:grid-cols-3 gap-4 text-center">
-    <Modal isOpen={isOpen} onClose={onClose} title="Pilih Aktivitas atau Sumber Daya">
-      <div className="grid grid-cols-1 bg-gray-200 text-gray-800 md:grid-cols-3 gap-4 text-center">
-        {/* Tombol Tambah Materi */}
-        <button
-          onClick={onSelectMaterial}
-          className="p-4 border rounded-lg flex flex-col items-center justify-center hover:bg-gray-100 hover:shadow-md transition-all"
-        >
-          <FaFileUpload className="text-3xl text-blue-500 mb-2" />
-          <span className="font-semibold">Materi File</span>
-        </button>
+    <Modal 
+      isOpen={isOpen} 
+      onClose={onClose} 
+      title="Pilih Aktivitas atau Sumber Daya"
+      isFullScreen={true} // Tambahkan prop ini untuk mengontrol mode fullscreen
+    >
+      {/* Konten di dalam modal dibuat terpusat di tengah layar */}
+      <div className="flex items-center justify-center h-full">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center p-8">
+          
+          {/* Tombol Tambah Materi */}
+          <button
+            onClick={() => {
+              onSelectMaterial();
+              onClose(); // Menutup modal setelah diklik
+            }}
+            className="p-8 border bg-white rounded-xl flex flex-col items-center justify-center hover:bg-gray-100 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
+          >
+            <FaFileUpload className="text-5xl text-blue-500 mb-4" />
+            <span className="font-semibold text-lg text-gray-800">Materi File</span>
+            <p className="text-sm text-gray-500 mt-1">Unggah dokumen, PDF, atau video.</p>
+          </button>
 
-        {/* Tombol Tambah Tugas */}
-        <button
-          onClick={onSelectAssignment}
-          className="p-4 border rounded-lg flex flex-col items-center justify-center hover:bg-gray-100 hover:shadow-md transition-all"
-        >
-          <FaClipboardList className="text-3xl text-green-500 mb-2" />
-          <span className="font-semibold">Tugas / Kuis</span>
-        </button>
+          {/* Tombol Tambah Tugas */}
+          <button
+            onClick={() => {
+              onSelectAssignment();
+              onClose(); // Menutup modal setelah diklik
+            }}
+            className="p-8 border bg-white rounded-xl flex flex-col items-center justify-center hover:bg-gray-100 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
+          >
+            <FaClipboardList className="text-5xl text-green-500 mb-4" />
+            <span className="font-semibold text-lg text-gray-800">Tugas / Kuis</span>
+            <p className="text-sm text-gray-500 mt-1">Buat tugas dengan batas waktu.</p>
+          </button>
 
-        {/* Tombol Tambah Absensi */}
-        <button
-          onClick={onSelectAttendance}
-          className="p-4 border rounded-lg flex flex-col items-center justify-center hover:bg-gray-100 hover:shadow-md transition-all"
-        >
-          <FaClock className="text-3xl text-red-500 mb-2" />
-          <span className="font-semibold">Absensi</span>
-        </button>
+          {/* Tombol Tambah Absensi */}
+          <button
+            onClick={() => {
+              onSelectAttendance();
+              onClose(); // Menutup modal setelah diklik
+            }}
+            className="p-8 border bg-white rounded-xl flex flex-col items-center justify-center hover:bg-gray-100 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
+          >
+            <FaClock className="text-5xl text-red-500 mb-4" />
+            <span className="font-semibold text-lg text-gray-800">Absensi</span>
+            <p className="text-sm text-gray-500 mt-1">Buat sesi absensi untuk kelas.</p>
+          </button>
+
+        </div>
       </div>
     </Modal>
-    </div>
   );
 }
