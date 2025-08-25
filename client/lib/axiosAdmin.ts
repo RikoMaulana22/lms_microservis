@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const adminApiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL_ADMIN,
+  baseURL: process.env.NEXT_PUBLIC_API_URL_ADMIN || 'http://localhost:5007/api/admin',
   headers: {
     'Content-Type': 'application/json',
   },

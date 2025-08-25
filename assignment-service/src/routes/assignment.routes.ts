@@ -1,26 +1,25 @@
-// Path: server/src/routes/assignment.routes.ts
-import { Router } from 'express';
-// PERUBAHAN: Impor fungsi controller yang baru
-import { createAssignmentForTopic, getAssignmentsForTopic, getAssignmentById, 
-        getMyAssignments, updateAssignment,getAssignmentSubmissions,gradeSubmission,
-        getSubmissionForReview, submitAssignment, createAssignmentFromBank } from '../controllers/assignment.controller';
-import { checkRole } from '../middlewares/role.middleware';
-import { authenticate} from '../middlewares/auth.middleware';
+// Path: assignment-service/src/routes/assignment.routes.ts
 
+import { Router } from 'express';
+import {
+    createAssignmentFromBank,
+    getAssignmentsForTopic,
+    getAssignmentById,
+    getAssignmentSubmissions,
+    submitAssignment,
+    getSubmissionForReview,
+} from '../controllers/assignment.controller';
+import { authenticate } from '../middlewares/auth.middleware';
+import { checkRole } from '../middlewares/role.middleware';
 
 const router = Router();
-router.get('/submissions/review/:id', authenticate, getSubmissionForReview);
 
-router.get('/my', authenticate, getMyAssignments);
-router.get('/topic/:topicId', authenticate, getAssignmentsForTopic);
-router.post('/topic/:topicId', authenticate, checkRole('guru'), createAssignmentForTopic);
-router.put('/:id', authenticate, checkRole('guru'), updateAssignment);
-router.get('/:id/submissions', authenticate, checkRole('guru'), getAssignmentSubmissions);
-router.put('/submissions/:submissionId/grade', authenticate, checkRole('guru'), gradeSubmission);
-router.get('/:id', authenticate, getAssignmentById);
-
-router.post('/submissions/assignment/:assignmentId', authenticate, checkRole('siswa'), submitAssignment);
+// Rute BARU dan BERSIH
 router.post('/topic/:topicId/from-bank', authenticate, checkRole('guru'), createAssignmentFromBank);
-
+router.get('/topic/:topicId', authenticate, getAssignmentsForTopic);
+router.get('/:id', authenticate, getAssignmentById);
+router.get('/:id/submissions', authenticate, checkRole('guru'), getAssignmentSubmissions); // Untuk guru
+router.post('/:assignmentId/submit', authenticate, checkRole('siswa'), submitAssignment);
+router.get('/submission/:id/review', authenticate, getSubmissionForReview); // Untuk siswa
 
 export default router;

@@ -9,13 +9,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// --- ENUMS ---
 enum QuestionType {
   pilgan
   esai
+
 }
 
-// --- MODELS ---
+enum AssignmentType {
+  pilgan
+  esai
+  upload_gambar
+  link_google
+}
+
 model Assignment {
   id           Int      @id @default(autoincrement())
   title        String
@@ -23,10 +29,10 @@ model Assignment {
   dueDate      DateTime
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-
   topicId      Int?
+  
+  type         AssignmentType // Sekarang baris ini akan valid
 
-  // Pengaturan Kuis/Tugas
   externalUrl  String?  @db.Text
   startTime    DateTime?
   endTime      DateTime?
@@ -34,28 +40,17 @@ model Assignment {
   attemptLimit Int?     @default(1)
   passingGrade Int?     @default(70)
 
-  // --- PERUBAHAN 1: Relasi diubah menjadi many-to-many ---
-  // Menghubungkan tugas ini ke banyak soal dari bank soal
   questions    Question[] @relation("AssignmentQuestions")
-
   submissions  Submission[]
 }
 
-// Model untuk BANK SOAL
 model Question {
   id           Int          @id @default(autoincrement())
   questionText String       @db.Text
-  type         QuestionType // Menggunakan Enum baru untuk tipe soal
-
-  // --- PERUBAHAN 2: Menambahkan metadata untuk Bank Soal ---
-  topic        String?      // Kategori soal, misal: "Aljabar", "Sejarah Kemerdekaan"
-  authorId     Int          // Menyimpan ID guru yang membuat soal
-
-  // --- PERUBAHAN 3: Relasi diubah dan foreign key dihapus ---
-  // Menghapus `assignmentId` karena soal tidak lagi milik satu tugas
+  type         QuestionType
+  topic        String?
+  authorId     Int
   options      Option[]
-
-  // Menghubungkan satu soal ke banyak tugas
   assignments  Assignment[] @relation("AssignmentQuestions")
 }
 
@@ -64,28 +59,24 @@ model Option {
   optionText  String
   isCorrect   Boolean @default(false)
   explanation String?
-
-  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  questionId Int
+  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  questionId  Int
 }
 
 model Submission {
-  id             Int       @id @default(autoincrement())
-  submissionDate DateTime  @default(now())
-  score          Float?
-  essayAnswer    String?   @db.Text
-  fileUrl        String?
-  studentId      Int
-
-  assignment     Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
-  assignmentId   Int
-
-  updatedAt      DateTime  @updatedAt
-
+  id              Int       @id @default(autoincrement())
+  submissionDate  DateTime  @default(now())
+  score           Float?
+  essayAnswer     String?   @db.Text
+  fileUrl         String?
+  studentId       Int
+  assignment      Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  assignmentId    Int
+  updatedAt       DateTime  @updatedAt
   selectedOptions Json?
-  startedOn      DateTime?
-  completedOn    DateTime?
-  timeTakenMs    Int?
+  startedOn       DateTime?
+  completedOn     DateTime?
+  timeTakenMs     Int?
 
   @@unique([studentId, assignmentId])
 }

@@ -5,6 +5,24 @@ import { AuthRequest } from '../middlewares/auth.middleware';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 
 const prisma = new PrismaClient();
+export const checkIsHomeroomTeacher = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { teacherId } = req.params;
+
+       const teacherIdAsNumber = parseInt(teacherId, 10);
+    const homeroomClass = await prisma.class.findFirst({
+      // Gunakan variabel yang sudah dikonversi menjadi number
+      where: { homeroomTeacherId: teacherIdAsNumber },
+    });
+    
+    // Kirim respons boolean yang jelas
+    res.status(200).json({ isHomeroomTeacher: !!homeroomClass });
+
+  } catch (error) {
+    console.error("Gagal memeriksa status wali kelas:", error);
+    res.status(500).json({ message: "Gagal memvalidasi status wali kelas." });
+  }
+};
 
 export const createClass = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {

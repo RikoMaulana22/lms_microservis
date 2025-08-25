@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { TokenPayload, AuthRequest } from '../middlewares/auth.middleware'; // Impor tipe payload
-
+import axios from 'axios';
 
 const prisma = new PrismaClient();
 
@@ -281,19 +281,23 @@ export const loginHomeroomTeacher = async (req: Request, res: Response): Promise
             return;
         }
 
-        // --- VALIDASI KHUSUS WALI KELAS ---
-        // Cek apakah guru ini adalah wali kelas di kelas manapun
-        const homeroomClass = await prisma.class.findFirst({
-            where: { homeroomTeacherId: user.id }
-        });
-
-        if (!homeroomClass) {
-            res.status(403).json({ message: 'Akses ditolak. Anda bukan wali kelas.' });
+        // --- PERBAIKAN DIMULAI DI SINI ---
+        // Ganti validasi lokal dengan panggilan API ke class-content-service
+        try {
+            const validationResponse = await axios.get(`http://localhost:5002/api/classes/homeroom-check/${user.id}`);
+            
+            if (!validationResponse.data || !validationResponse.data.isHomeroomTeacher) {
+                res.status(403).json({ message: 'Akses ditolak. Anda bukan wali kelas.' });
+                return;
+            }
+        } catch (apiError) {
+            console.error('Gagal saat validasi wali kelas ke class-content-service:', apiError);
+            res.status(500).json({ message: 'Gagal memvalidasi peran wali kelas.' });
             return;
         }
-        // --- AKHIR VALIDASI ---
+        // --- AKHIR DARI PERBAIKAN ---
 
-        const payload = { userId: user.id, role: user.role };
+        const payload: TokenPayload = { userId: user.id, role: user.role };
         const token = jwt.sign(payload, process.env.JWT_SECRET as string, { expiresIn: '1d' });
 
         res.status(200).json({

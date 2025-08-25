@@ -13,7 +13,7 @@ app.use(cors({
 }));
 app.use(cors());
 app.use(express.json());
-app.use('/api/schedules', scheduleRoutes);
+app.use('/schedules', scheduleRoutes);
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Schedule Service berjalan di http://localhost:${PORT}`);

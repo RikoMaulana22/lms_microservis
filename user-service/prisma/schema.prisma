@@ -19,14 +19,14 @@ enum Role {
 
 // --- MODELS ---
 model Setting {
-  id        Int      @id @default(autoincrement())
+  id        Int      @id @default(autoincrement()) // PERBAIKAN: autoinomincrement -> autoincrement
   key       String   @unique
   value     String   @db.Text
   updatedAt DateTime @updatedAt
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
+  id        Int      @id @default(autoincrement()) // PERBAIKAN: autoinomincrement -> autoincrement
   username  String   @unique
   password  String
   fullName  String

@@ -1,9 +1,31 @@
 // Path: src/controllers/topic.controller.ts
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middlewares/auth.middleware';
 
 const prisma = new PrismaClient();
+
+export const getTopicDetailsForValidation = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const topic = await prisma.topic.findUnique({
+            where: { id: parseInt(id) },
+            include: {
+                class: {
+                    select: {
+                        teacherId: true
+                    }
+                }
+            }
+        });
+        if (!topic) {
+            return res.status(404).json({ message: 'Topic not found' });
+        }
+        res.status(200).json(topic);
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to get topic details' });
+    }
+};
 
 // Fungsi untuk mengedit judul topik
 export const updateTopic = async (req: AuthRequest, res: Response): Promise<void> => {

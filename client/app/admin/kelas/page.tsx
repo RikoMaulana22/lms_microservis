@@ -19,7 +19,7 @@ export default function ClassManagementPage() {
     const [classes, setClasses] = useState<ClassInfo[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    
+
     // 2. State baru untuk menampung nilai filter
     const [selectedGrade, setSelectedGrade] = useState<string>('');
 
@@ -27,9 +27,8 @@ export default function ClassManagementPage() {
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
-            // Tambahkan parameter 'grade' ke request jika filter dipilih
-            const url = selectedGrade ? `${process.env.NEXT_PUBLIC_API_URL_ADMIN}/classes?grade=${selectedGrade}` 
-            : `${process.env.NEXT_PUBLIC_API_URL_ADMIN}/classes`;
+            // cukup pakai relative path
+            const url = selectedGrade ? `/classes?grade=${selectedGrade}` : `/classes`;
             const response = await adminApiClient.get(url);
             setClasses(response.data);
         } catch (error) {
@@ -65,10 +64,10 @@ export default function ClassManagementPage() {
 
     return (
         <div className="container mx-auto p-4 text-gray-600 md:p-8">
-            <AddClassModal 
+            <AddClassModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                onClassCreated={fetchData} 
+                onClassCreated={fetchData}
             />
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold">Manajemen Kelas</h1>
@@ -120,13 +119,13 @@ export default function ClassManagementPage() {
                                     <td className="px-6 py-4 border border-gray-300 whitespace-nowrap">{cls.homeroomTeacher?.fullName || 'Belum Ditentukan'}</td>
                                     {/* 6. Tambahkan tombol Hapus */}
                                     <td className="px-6 py-4 border border-gray-300 whitespace-nowrap space-x-4">
-                                        <Link 
+                                        <Link
                                             href={`/classes/${cls.id}/enroll`}
                                             className="text-blue-600 hover:underline font-semibold text-sm"
                                         >
                                             Kelola Pendaftaran
                                         </Link>
-                                        <button 
+                                        <button
                                             onClick={() => handleDeleteClass(cls.id)}
                                             className="text-red-600 hover:underline font-semibold text-sm"
                                         >
@@ -135,7 +134,7 @@ export default function ClassManagementPage() {
                                     </td>
                                 </tr>
                             ))}
-                             {!isLoading && classes.length === 0 && (
+                            {!isLoading && classes.length === 0 && (
                                 <tr>
                                     <td colSpan={5} className="text-center py-4 text-gray-500">
                                         Tidak ada kelas yang ditemukan untuk filter ini.
