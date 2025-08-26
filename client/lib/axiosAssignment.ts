@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const assignmentApiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL_ASSIGNMENT,
+  baseURL: process.env.NEXT_PUBLIC_API_URL_ASSIGNMENT || 'http://localhost:5003/api/assignments',
   headers: {
         'Content-Type': 'application/json',
     },

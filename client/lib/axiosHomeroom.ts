@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const homeroomApiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL_HOMEROOM,
+  baseURL: process.env.NEXT_PUBLIC_API_URL_HOMEROOM || 'http://localhost:5005/api/homeroom',
   headers: {
         'Content-Type': 'application/json',
     },

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const scheduleApiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL_SCHEDULE,
+  baseURL: process.env.NEXT_PUBLIC_API_URL_SCHEDULE || 'http://localhost:5004/api/schedules',
   headers: {
         'Content-Type': 'application/json',
     },

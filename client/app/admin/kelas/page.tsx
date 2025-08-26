@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import adminApiClient from '@/lib/axiosAdmin';
+import classContentApiClient from '@/lib/axiosClassContent';
 import AddClassModal from '@/components/dashboard/admin/AddClassModal';
 import Link from 'next/link';
 import toast from 'react-hot-toast'; // 1. Impor toast untuk notifikasi
@@ -29,7 +29,7 @@ export default function ClassManagementPage() {
         try {
             // cukup pakai relative path
             const url = selectedGrade ? `/classes?grade=${selectedGrade}` : `/classes`;
-            const response = await adminApiClient.get(url);
+            const response = await classContentApiClient.get(url);
             setClasses(response.data);
         } catch (error) {
             console.error("Gagal mengambil data kelas:", error);
@@ -51,7 +51,7 @@ export default function ClassManagementPage() {
 
         const toastId = toast.loading('Menghapus kelas...');
         try {
-            await adminApiClient.delete(`/classes/${classId}`);
+            await classContentApiClient.delete(`/classes/${classId}`);
             toast.success('Kelas berhasil dihapus.', { id: toastId });
             fetchData();// Muat ulang data setelah berhasil dihapus
         } catch (error) {

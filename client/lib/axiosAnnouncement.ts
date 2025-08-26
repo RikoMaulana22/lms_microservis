@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const announcementApiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL_ANNOUNCEMENT,
+  baseURL: process.env.NEXT_PUBLIC_API_URL_ANNOUNCEMENT || 'http://localhost:5006/api/announcements',
   headers: {
         'Content-Type': 'application/json',
     },

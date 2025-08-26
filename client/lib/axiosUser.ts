@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const userApiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL_USER,
+  baseURL: process.env.NEXT_PUBLIC_API_URL_USER || 'http://localhost:5001/api',
   headers: {
         'Content-Type': 'application/json',
     },
