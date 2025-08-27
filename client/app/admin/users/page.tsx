@@ -1,53 +1,83 @@
+// client/app/admin/users/page.tsx
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { User } from '@/types';
-import Link from 'next/link'; 
+import Link from 'next/link';
 import adminApiClient from '@/lib/axiosAdmin';
-
+import toast from 'react-hot-toast';
+import AddUserModal from '@/components/dashboard/admin/AddUserModal';
+import EditUserModal from '@/components/dashboard/admin/EditUserModal';
 
 export default function UserManagementPage() {
     const [users, setUsers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    // State untuk modal tambah user akan kita gunakan nanti
-    // const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+    const fetchUsers = async () => {
+        setIsLoading(true);
+        try {
+            const response = await adminApiClient.get('/admin/users');
+            setUsers(response.data);
+        } catch (error) {
+            toast.error("Gagal mengambil data pengguna.");
+            console.error("Gagal mengambil data pengguna:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchUsers = async () => {
-            try {
-               const response = await adminApiClient.get('/admin/users');
-                setUsers(response.data);
-            } catch (error) {
-                console.error("Gagal mengambil data pengguna:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
         fetchUsers();
     }, []);
+
+    const handleEdit = (user: User) => {
+        setSelectedUser(user);
+        setIsEditModalOpen(true);
+    };
+
+    const handleDelete = async (userId: number) => {
+        if (!window.confirm('Apakah Anda yakin ingin menghapus pengguna ini?')) return;
+
+        const toastId = toast.loading('Menghapus pengguna...');
+        try {
+            await adminApiClient.delete(`/users/${userId}`);
+            toast.success('Pengguna berhasil dihapus.', { id: toastId });
+            fetchUsers();
+        } catch (error) {
+            toast.error('Gagal menghapus pengguna.', { id: toastId });
+        }
+    };
 
     if (isLoading) return <div className="p-8 text-center">Memuat Pengguna...</div>;
 
     return (
-        <div className="container mx-auto p-4 md:p-8">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold">Manajemen Pengguna</h1>
-                
-                {/* --- 2. Tambahkan tombol di sini --- */}
-                <div className="flex gap-2">
-                    <Link 
-                        href="/admin/users/import"
-                        className="btn-secondary whitespace-nowrap" // Gunakan style sekunder
-                    >
-                        Impor Massal
-                    </Link>
-                    <button className="btn-primary">+ Tambah Pengguna</button>
+        <>
+            <AddUserModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                onUserAdded={fetchUsers}
+            />
+            <EditUserModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                user={selectedUser}
+                onUserUpdated={fetchUsers}
+            />
+            <div className="container mx-auto p-4 md:p-8">
+                <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-3xl font-bold">Manajemen Pengguna</h1>
+                    <div className="flex gap-2">
+                        <Link href="/admin/users/import" className="btn-secondary whitespace-nowrap">
+                            Impor Massal
+                        </Link>
+                        <button onClick={() => setIsAddModalOpen(true)} className="btn-primary">+ Tambah Pengguna</button>
+                    </div>
                 </div>
-
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-md">
-                <div className="overflow-x-auto">
+                <div className="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
@@ -55,7 +85,7 @@ export default function UserManagementPage() {
                                 <th className="px-6 py-3 text-left text-xs font-medium uppercase">Username</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium uppercase">Email</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium uppercase">Peran</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium uppercase">Tanggal Daftar</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium uppercase">Aksi</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
@@ -65,13 +95,16 @@ export default function UserManagementPage() {
                                     <td className="px-6 py-4 whitespace-nowrap">{user.username}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
                                     <td className="px-6 py-4 whitespace-nowrap capitalize">{user.role}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap">{new Date(user.createdAt!).toLocaleDateString('id-ID')}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap space-x-4">
+                                        <button onClick={() => handleEdit(user)} className="text-blue-600 hover:underline">Edit</button>
+                                        <button onClick={() => handleDelete(user.id)} className="text-red-600 hover:underline">Hapus</button>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
             </div>
-        </div>
+        </>
     );
 }

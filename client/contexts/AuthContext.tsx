@@ -1,118 +1,75 @@
-// Path: src/contexts/AuthContext.tsx
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { jwtDecode } from 'jwt-decode';
+import { createContext, useState, useContext, useEffect, useCallback, ReactNode } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import Cookies from 'js-cookie';
 import userApiClient from '@/lib/axiosUser';
-import adminApiClient from '@/lib/axiosAdmin';
-import { Settings, User } from '@/types';
-
-interface DecodedToken {
-  userId: number;
-  exp: number;
-}
+import { User } from '@/types';
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
-  settings: Settings | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  login: (token: string, userData: User) => void; // Dikembalikan seperti semula
+  login: (token: string, userData: User) => void;
   logout: () => void;
-  revalidateUser: () => Promise<void>;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [settings, setSettings] = useState<Settings | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+  const pathname = usePathname();
 
-  // Efek ini akan berjalan setiap kali token berubah untuk mengatur header default
-  useEffect(() => {
-    const clients = [userApiClient, adminApiClient]; // Tambahkan semua axios client lain di sini
-    clients.forEach(client => {
-        if (token) {
-            client.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        } else {
-            delete client.defaults.headers.common['Authorization'];
-        }
-    });
-  }, [token]);
-  
   const logout = useCallback(() => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setToken(null);
     setUser(null);
-  }, []);
-
-  const revalidateUser = useCallback(async () => {
-    try {
-      const response = await userApiClient.get(`/auth/me`);
-      const freshUserData = response.data;
-      setUser(freshUserData);
-      localStorage.setItem('user', JSON.stringify(freshUserData));
-    } catch (error) {
-      console.error("Gagal memvalidasi ulang sesi, logout...", error);
-      logout();
+    Cookies.remove('token');
+    if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) {
+      router.push('/login');
     }
-  }, [logout]);
+  }, [router, pathname]);
 
   useEffect(() => {
-    const initializeApp = async () => {
-      setIsLoading(true);
-      
-      try {
-        const settingsResponse = await adminApiClient.get('/settings');
-        setSettings(settingsResponse.data);
-      } catch (error) {
-        console.error("Gagal mengambil pengaturan sistem:", error);
-      }
-
-      const storedToken = localStorage.getItem('token');
-      if (storedToken) {
+    const revalidateUser = async () => {
+      const token = Cookies.get('token');
+      if (token) {
         try {
-          const decodedToken: DecodedToken = jwtDecode(storedToken);
-          if (decodedToken.exp * 1000 > Date.now()) {
-            setToken(storedToken);
-            await revalidateUser();
-          } else {
-            logout();
-          }
+          const response = await userApiClient.get('/auth/profile');
+          setUser(response.data);
         } catch (error) {
-          console.error("Token tidak valid:", error);
+          console.error('Gagal memvalidasi sesi, token tidak valid.', error);
           logout();
         }
       }
       setIsLoading(false);
     };
 
-    initializeApp();
-  }, [revalidateUser, logout]);
+    revalidateUser();
+  }, [logout]);
 
-  // PERBAIKAN: Fungsi login dikembalikan untuk hanya menyimpan state
-  const login = (newToken: string, userData: User) => {
-    localStorage.setItem('token', newToken);
-    localStorage.setItem('user', JSON.stringify(userData));
-    setToken(newToken);
+  const login = (token: string, userData: User) => {
     setUser(userData);
+    Cookies.set('token', token, { expires: 1, secure: process.env.NODE_ENV === 'production' });
+    
+    switch (userData.role) {
+      case 'admin':
+        router.push('/admin/kelas');
+        break;
+      case 'wali_kelas':
+        router.push('/dashboard/wali-kelas');
+        break;
+      case 'guru':
+      case 'siswa':
+      default:
+        router.push('/dashboard');
+        break;
+    }
   };
+  
+  const value = { user, login, logout, isLoading };
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      token,
-      settings,
-      isLoading,
-      isAuthenticated: !!user,
-      login,
-      logout,
-      revalidateUser
-    }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

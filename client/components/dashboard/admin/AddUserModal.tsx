@@ -46,7 +46,7 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }: AddUserMo
     if (isOpen && formData.role === 'wali_kelas') {
       const fetchClasses = async () => {
         try {
-          const response = await classContentApiClient.get('/admin/classes/available-for-homeroom');
+          const response = await adminApiClient.get('/users');
           setAvailableClasses(response.data);
         } catch (error) {
           toast.error("Gagal memuat daftar kelas.");
@@ -111,7 +111,7 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }: AddUserMo
           </div>
         )}
 
-        {formData.role === 'wali_kelas' && (
+        {/* {formData.role === 'wali_kelas' && (
           <div>
             <label className="block text-sm font-medium">Tugaskan ke Kelas</label>
             <select name="homeroomClassId" value={formData.homeroomClassId} onChange={handleChange} required className="form-select w-full mt-1">
@@ -121,7 +121,7 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }: AddUserMo
               ))}
             </select>
           </div>
-        )}
+        )} */}
 
         <div className="flex justify-end gap-4 pt-4 border-t mt-6">
           <button type="button" onClick={handleClose} className="px-4 py-2 bg-gray-200 rounded-lg">Batal</button>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
-import classContentApiClient from '@/lib/axiosClassContent';
+import adminApiClient from '@/lib/axiosAdmin'; // Menjadi ini
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
 
@@ -26,7 +26,7 @@ export default function AddSubjectModal({ isOpen, onClose, onSubjectAdded }: Add
     setIsLoading(true);
     const loadingToast = toast.loading('Menambahkan mata pelajaran...');
     try {
-      await classContentApiClient.post('/subjects', formData);
+      await adminApiClient.post('/subjects', formData);
       toast.success('Mata pelajaran baru berhasil ditambahkan!', { id: loadingToast });
       onSubjectAdded();
       handleClose();

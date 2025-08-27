@@ -1,11 +1,11 @@
 
 export type AssignmentType = 'pilgan' | 'esai' | 'upload_gambar' | 'link_google';
-
+export type UserRole = 'siswa' | 'guru' | 'admin' | 'wali_kelas';
 export interface User {
   id: number;
   fullName: string;
   username: string; // <-- Ini properti yang hilang
-  role: 'guru' | 'siswa'| 'admin';
+  role: UserRole;
   email: string;
   createdAt?: string;
   nisn?: string | null; // Dibuat opsional karena tidak semua user punya
