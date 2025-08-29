@@ -1,10 +1,15 @@
-'use client';
+// Path: client/contexts/AuthContext.tsx
 
-import { createContext, useState, useContext, useEffect, useCallback, ReactNode } from 'react';
+"use client";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import Cookies from 'js-cookie';
-import userApiClient from '@/lib/axiosUser';
-import { User } from '@/types';
+import userApiClient from '@/lib/axiosUser'; // Pastikan Anda punya axios instance untuk user service
+
+interface User {
+  id: number;
+  fullName: string;
+  role: 'admin' | 'guru' | 'siswa' | 'wali_kelas';
+}
 
 interface AuthContextType {
   user: User | null;
@@ -21,55 +26,55 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
 
-  const logout = useCallback(() => {
-    setUser(null);
-    Cookies.remove('token');
-    if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) {
-      router.push('/login');
-    }
-  }, [router, pathname]);
-
-  useEffect(() => {
-    const revalidateUser = async () => {
-      const token = Cookies.get('token');
-      if (token) {
-        try {
-          const response = await userApiClient.get('/auth/profile');
-          setUser(response.data);
-        } catch (error) {
-          console.error('Gagal memvalidasi sesi, token tidak valid.', error);
-          logout();
-        }
-      }
+  const revalidateUser = async (token: string) => {
+    try {
+      // =================================================================
+      // PERBAIKAN UTAMA DI SINI: URL diubah dari /api/users/profile menjadi /users/profile
+      // Axios instance sudah memiliki base URL http://localhost:5001/api
+      // =================================================================
+      const response = await userApiClient.get('/users/profile', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setUser(response.data);
+    } catch (error) {
+      console.error('Gagal memvalidasi sesi, token tidak valid.', error);
+      logout(); // Jika validasi gagal, logout pengguna
+    } finally {
       setIsLoading(false);
-    };
-
-    revalidateUser();
-  }, [logout]);
-
-  const login = (token: string, userData: User) => {
-    setUser(userData);
-    Cookies.set('token', token, { expires: 1, secure: process.env.NODE_ENV === 'production' });
-    
-    switch (userData.role) {
-      case 'admin':
-        router.push('/admin/kelas');
-        break;
-      case 'wali_kelas':
-        router.push('/dashboard/wali-kelas');
-        break;
-      case 'guru':
-      case 'siswa':
-      default:
-        router.push('/dashboard');
-        break;
     }
   };
   
-  const value = { user, login, logout, isLoading };
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      revalidateUser(token);
+    } else {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const login = (token: string, userData: User) => {
+    localStorage.setItem('token', token);
+    setUser(userData);
+    if (userData.role === 'admin') {
+      router.push('/admin/users');
+    } else {
+      router.push('/dashboard');
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    setUser(null);
+    if (pathname.startsWith('/admin')) {
+        router.push('/admin/login');
+    } else {
+        router.push('/login');
+    }
+  };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

@@ -42,7 +42,7 @@ export const getGroupedSubjects = async (req: AuthRequest, res: Response, next: 
             ],
             // 'include' ini penting untuk menampilkan daftar kelas di bawah subjek
             include: {
-                Class: {
+                classes: {
                     select: {
                         id: true,
                         name: true,
@@ -76,20 +76,24 @@ export const getGroupedSubjects = async (req: AuthRequest, res: Response, next: 
 // --- FUNGSI BARU UNTUK ADMIN ---
 
 // Membuat mata pelajaran baru
-export const createSubject = async (req: AuthRequest, res: Response): Promise<void> => {
-    const { name, grade } = req.body;
-    if (!name || !grade) {
-        res.status(400).json({ message: 'Nama dan tingkatan kelas wajib diisi.' });
-        return;
-    }
+export const createSubject = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
+        const { name, grade } = req.body;
+        if (!name || !grade) {
+            res.status(400).json({ message: 'Nama mata pelajaran dan tingkat kelas wajib diisi.' });
+            return;
+        }
+
         const newSubject = await prisma.subject.create({
-            data: { name, grade: Number(grade) },
+            data: {
+                name,
+                grade: Number(grade) // Wajib dikonversi menjadi Angka
+            }
         });
         res.status(201).json(newSubject);
     } catch (error) {
-        console.error("Gagal membuat mapel:", error);
-        res.status(500).json({ message: 'Gagal membuat mata pelajaran.' });
+        console.error("Gagal membuat mata pelajaran:", error);
+        res.status(500).json({ message: 'Gagal membuat mata pelajaran baru.' });
     }
 };
 

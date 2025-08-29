@@ -1,317 +1,148 @@
-import { Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client'; 
+import { Request, Response } from 'express';
+import { PrismaClient, Role  } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { TokenPayload, AuthRequest } from '../middlewares/auth.middleware'; // Impor tipe payload
+import { AuthRequest } from '../middlewares/auth.middleware';
 import axios from 'axios';
 
 const prisma = new PrismaClient();
 
-// // Fungsi registerUser tidak perlu diubah, sudah benar
-// export const registerUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-//     try {
-//         // 1. Ambil 'email' dari request body
-//         const { username, email, password, fullName, role } = req.body;
+// =========================================================================================
+//  FUNGSI LOGIN
+// =========================================================================================
 
-//         // 2. Tambahkan validasi untuk 'email'
-//         if (!username || !email || !password || !fullName || !role) {
-//             res.status(400).json({ message: 'Semua field wajib diisi' });
-//             return;
-//         }
-
-//         // 3. Cek apakah username atau email sudah ada
-//         const existingUser = await prisma.user.findFirst({
-//             where: {
-//                 OR: [
-//                     { username: username },
-//                     { email: email }
-//                 ]
-//             }
-//         });
-        
-//         if (existingUser) {
-//             // Beri pesan yang spesifik tergantung mana yang sudah ada
-//             const message = existingUser.username === username ? 'Username sudah digunakan' : 'Email sudah digunakan';
-//             res.status(409).json({ message });
-//             return;
-//         }
-
-//         const hashedPassword = await bcrypt.hash(password, 10);
-
-//         // 4. Sertakan 'email' saat membuat user baru
-//         const newUser = await prisma.user.create({
-//             data: {
-//                 username,
-//                 email, // <-- Sertakan email di sini
-//                 password: hashedPassword,
-//                 fullName,
-//                 role
-//             }
-//         });
-        
-//         // Pilih data yang akan dikirim kembali (tanpa password)
-//         const userToReturn = {
-//             id: newUser.id,
-//             username: newUser.username,
-//             email: newUser.email,
-//             fullName: newUser.fullName,
-//             role: newUser.role
-//         };
-
-//         res.status(201).json({ message: 'Registrasi berhasil!', user: userToReturn });
-
-//     } catch (error) {
-//         console.error('Error saat registrasi:', error);
-//         res.status(500).json({ message: 'Terjadi kesalahan pada server' });
-//     }
-// };
-
-export const getUsers = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        fullName: true,
-        username: true,
-        email: true,
-        role: true,
-        nisn: true,
-        createdAt: true
-      }
-    });
-    res.status(200).json(users);
-  } catch (error) {
-    console.error("Error fetching users:", error);
-    res.status(500).json({ message: "Failed to fetch users." });
-  }
-};
-
-// Fungsi baru untuk impor pengguna massal
-export const bulkImportUsers = async (req: Request, res: Response): Promise<void> => {
-    // Implementasi logika impor massal di sini
-    // Ini membutuhkan library seperti 'papaparse' untuk memproses file CSV
-    // dan logika untuk membuat banyak user sekaligus
-    res.status(501).json({ message: "Bulk import function not yet implemented." });
-};
-
-// Fungsi baru untuk membuat satu pengguna baru (dari AddUserModal)
-export const createUser = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { fullName, username, password, email, role, nisn, homeroomClassId } = req.body;
-    
-    // Validasi input
-    if (!fullName || !username || !password || !email || !role) {
-      res.status(400).json({ message: 'Semua field wajib diisi' });
-      return;
-    }
-    
-    // Cek apakah username atau email sudah ada
-    const existingUser = await prisma.user.findFirst({
-        where: { OR: [{ username }, { email }] }
-    });
-    if (existingUser) {
-        res.status(409).json({ message: 'Username atau email sudah terdaftar.' });
-        return;
-    }
-    
-    const hashedPassword = await bcrypt.hash(password, 10);
-    
-    const newUser = await prisma.user.create({
-      data: {
-        fullName,
-        username,
-        email,
-        password: hashedPassword,
-        role,
-        nisn: role === 'siswa' ? nisn : null,
-      },
-      select: {
-        id: true,
-        fullName: true,
-        username: true,
-        email: true,
-        role: true,
-        nisn: true,
-      }
-    });
-
-    res.status(201).json({ message: "Pengguna berhasil ditambahkan.", user: newUser });
-    
-  } catch (error) {
-    console.error("Error creating user:", error);
-    res.status(500).json({ message: "Gagal menambahkan pengguna." });
-  }
-};
-
-export const loginUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
+export const login = async (req: Request, res: Response) => {
     const { username, password } = req.body;
-    if (!username || !password) {
-      res.status(400).json({ message: 'Username dan password wajib diisi' });
-      return;
-    }
-    const user = await prisma.user.findUnique({ where: { username } });
-    if (!user) {
-      res.status(404).json({ message: 'Username tidak ditemukan' });
-      return;
-    }
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      res.status(401).json({ message: 'Password salah' });
-      return;
-    }
-
-    // --- PERBAIKAN DI SINI ---
-    // Buat payload yang sesuai dengan interface TokenPayload (hanya userId dan role)
-    const payload: TokenPayload = { userId: user.id, role: user.role };
-    const token = jwt.sign(payload, process.env.JWT_SECRET as string, { expiresIn: '1d' });
-    // --- AKHIR PERBAIKAN ---
-
-    res.status(200).json({
-      message: 'Login berhasil!',
-      token, // Token yang lebih ramping dan aman
-      user: { // Data lengkap user tetap dikirim di body respons, ini sudah benar
-        id: user.id,
-        username: user.username,
-        fullName: user.fullName,
-        role: user.role,
-      },
-    });
-  } catch (error) {
-    console.error('Error saat login:', error);
-    res.status(500).json({ message: 'Terjadi kesalahan pada server' });
-  }
-};
-// --- FUNGSI BARU: Login Khusus Admin ---
-export const loginAdmin = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { username, password } = req.body;
-        if (!username || !password) {
-            res.status(400).json({ message: 'Username dan password wajib diisi' });
-            return;
+        const user = await prisma.user.findUnique({ where: { username } });
+
+        if (!user || !(await bcrypt.compare(password, user.password))) {
+            return res.status(401).json({ message: 'Username atau password salah.' });
+        }
+
+        if (user.role === 'wali_kelas') {
+            try {
+                const validationResponse = await axios.get(`http://localhost:5002/api/classes/homeroom-check/${user.id}`);
+                if (!validationResponse.data?.isHomeroomTeacher) {
+                    return res.status(403).json({ message: 'Akses ditolak. Anda bukan wali kelas aktif.' });
+                }
+            } catch (error) {
+                console.error('Gagal validasi wali kelas:', error);
+                return res.status(500).json({ message: 'Gagal memvalidasi peran wali kelas.' });
+            }
         }
         
-        const user = await prisma.user.findUnique({ where: { username } });
-        if (!user) {
-            res.status(404).json({ message: 'Akun tidak ditemukan' });
-            return;
-        }
-
-        // VALIDASI PERAN: Pastikan pengguna adalah admin
-        if (user.role !== 'admin') {
-            res.status(403).json({ message: 'Akses ditolak. Anda bukan admin.' });
-            return;
-        }
-
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        if (!isPasswordValid) {
-            res.status(401).json({ message: 'Password salah' });
-            return;
-        }
-
-        const payload: TokenPayload = { userId: user.id, role: user.role };
-        const token = jwt.sign(payload, process.env.JWT_SECRET as string, { expiresIn: '1d' });
-
-        res.status(200).json({
-            message: 'Login admin berhasil!',
-            token,
-            user: {
-                id: user.id,
-                username: user.username,
-                fullName: user.fullName,
-                role: user.role,
-            },
-        });
+        const secret = process.env.JWT_SECRET || 'your-secret-key';
+        const token = jwt.sign({ userId: user.id, role: user.role }, secret, { expiresIn: '24h' });
+        res.json({ token, user: { id: user.id, fullName: user.fullName, role: user.role } });
     } catch (error) {
-        console.error('Error saat login admin:', error);
-        res.status(500).json({ message: 'Terjadi kesalahan pada server' });
+        res.status(500).json({ message: 'Terjadi kesalahan saat login.' });
     }
 };
 
-export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
+// =========================================================================================
+//  FUNGSI PROFIL PENGGUNA
+// =========================================================================================
+
+export const getProfile = async (req: AuthRequest, res: Response) => {
     try {
-        const userId = req.user?.userId;
-
-        if (!userId) {
-            res.status(401).json({ message: "Otentikasi gagal." });
-            return;
-        }
-
         const user = await prisma.user.findUnique({
-            where: { id: userId },
-            // Pilih hanya data yang aman untuk dikirim ke frontend
-            select: {
-                id: true,
-                fullName: true,
-                email: true,
-                role: true,
-            }
+            where: { id: req.user?.userId },
+            select: { id: true, fullName: true, username: true, email: true, role: true, nisn: true }
         });
-
-        if (!user) {
-            res.status(404).json({ message: "Pengguna tidak ditemukan." });
-            return;
-        }
-
-        res.status(200).json(user);
-
+        if (!user) return res.status(404).json({ message: 'Pengguna tidak ditemukan.' });
+        res.json(user);
     } catch (error) {
-        console.error("Error saat mengambil data pengguna:", error);
-        res.status(500).json({ message: "Terjadi kesalahan pada server." });
+        res.status(500).json({ message: 'Gagal mengambil profil.' });
     }
 };
 
-export const loginHomeroomTeacher = async (req: Request, res: Response): Promise<void> => {
+export const updateProfile = async (req: AuthRequest, res: Response) => {
+    const { fullName, username, email, password } = req.body;
     try {
-        const { username, password } = req.body;
-        if (!username || !password) {
-            res.status(400).json({ message: 'Username dan password wajib diisi' });
-            return;
+        const dataToUpdate: any = { fullName, username, email };
+        if (password) {
+            dataToUpdate.password = await bcrypt.hash(password, 10);
         }
-        
-        const user = await prisma.user.findUnique({ where: { username } });
-        if (!user) {
-            res.status(404).json({ message: 'Username tidak ditemukan' });
-            return;
-        }
-
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        if (!isPasswordValid) {
-            res.status(401).json({ message: 'Password salah' });
-            return;
-        }
-
-        // --- PERBAIKAN DIMULAI DI SINI ---
-        // Ganti validasi lokal dengan panggilan API ke class-content-service
-        try {
-            const validationResponse = await axios.get(`http://localhost:5002/api/classes/homeroom-check/${user.id}`);
-            
-            if (!validationResponse.data || !validationResponse.data.isHomeroomTeacher) {
-                res.status(403).json({ message: 'Akses ditolak. Anda bukan wali kelas.' });
-                return;
-            }
-        } catch (apiError) {
-            console.error('Gagal saat validasi wali kelas ke class-content-service:', apiError);
-            res.status(500).json({ message: 'Gagal memvalidasi peran wali kelas.' });
-            return;
-        }
-        // --- AKHIR DARI PERBAIKAN ---
-
-        const payload: TokenPayload = { userId: user.id, role: user.role };
-        const token = jwt.sign(payload, process.env.JWT_SECRET as string, { expiresIn: '1d' });
-
-        res.status(200).json({
-            message: 'Login wali kelas berhasil!',
-            token,
-            user: {
-                id: user.id,
-                fullName: user.fullName,
-                email: user.email,
-                role: user.role,
-            },
+        const updatedUser = await prisma.user.update({
+            where: { id: req.user?.userId },
+            data: dataToUpdate,
         });
+        const { password: _, ...userWithoutPassword } = updatedUser;
+        res.json(userWithoutPassword);
     } catch (error) {
-        console.error('Error saat login wali kelas:', error);
-        res.status(500).json({ message: 'Terjadi kesalahan pada server' });
+        res.status(500).json({ message: 'Gagal memperbarui profil.' });
+    }
+};
+
+// =========================================================================================
+//  FUNGSI MANAJEMEN PENGGUNA (UNTUK ADMIN)
+// =========================================================================================
+
+export const getAllUsers = async (req: Request, res: Response) => {
+    const role = req.query.role as Role;
+    try {
+        const users = await prisma.user.findMany({
+            where: role ? { role } : {},
+            select: { id: true, username: true, fullName: true, email: true, role: true, nisn: true, createdAt: true },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.status(200).json(users);
+    } catch (error) {
+        res.status(500).json({ message: "Gagal mengambil data pengguna." });
+    }
+};
+
+export const createUser = async (req: Request, res: Response) => {
+    const { fullName, username, password, email, role, nisn, homeroomClassId } = req.body;
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const newUser = await prisma.user.create({
+            data: {
+                fullName,
+                username,
+                password: hashedPassword,
+                email,
+                role,
+                nisn: role === 'siswa' ? nisn : null,
+                homeroomClassId: role === 'wali_kelas' ? Number(homeroomClassId) : null,
+            }
+        });
+        const { password: _, ...userWithoutPassword } = newUser;
+        res.status(201).json({ message: "Pengguna berhasil dibuat.", user: userWithoutPassword });
+    } catch (error: any) {
+        if (error.code === 'P2002') {
+            return res.status(409).json({ message: `Username atau email sudah ada.` });
+        }
+        res.status(500).json({ message: "Gagal membuat pengguna baru." });
+    }
+};
+
+export const updateUser = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { fullName, username, role, nisn, password } = req.body;
+    try {
+        const dataToUpdate: any = { fullName, username, role, nisn: role === 'siswa' ? nisn : null };
+        if (password) {
+            dataToUpdate.password = await bcrypt.hash(password, 10);
+        }
+        const updatedUser = await prisma.user.update({
+            where: { id: Number(id) },
+            data: dataToUpdate,
+        });
+        const { password: _, ...userWithoutPassword } = updatedUser;
+        res.status(200).json(userWithoutPassword);
+    } catch (error) {
+        res.status(500).json({ message: "Gagal memperbarui data pengguna." });
+    }
+};
+
+export const deleteUser = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+        await prisma.user.delete({ where: { id: Number(id) } });
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: "Gagal menghapus pengguna." });
     }
 };

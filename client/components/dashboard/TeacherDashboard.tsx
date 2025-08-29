@@ -16,6 +16,7 @@ import AnnouncementSection from './AnnouncementSection';
 import GlobalMaterialsSection from './GlobalMaterialsSection';
 import TodayScheduleSection from './TodayScheduleSection';
 
+
 export default function TeacherDashboard({ user }: { user: User }) {
   const [myClasses, setMyClasses] = useState<ClassSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -86,12 +87,7 @@ export default function TeacherDashboard({ user }: { user: User }) {
             <h1 className="text-3xl font-bold">Dashboard Guru</h1>
             <p className="text-gray-600">Selamat datang kembali, {user.fullName}!</p>
           </div>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700"
-          >
-            + Buat Kelas Baru
-          </button>
+          
         </div>
 
         {/* Sections */}

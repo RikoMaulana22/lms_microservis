@@ -26,11 +26,11 @@ export default function DashboardPage() {
 
   // Tampilkan komponen dashboard yang sesuai berdasarkan role
   if (user?.role === 'guru') {
-    return <TeacherDashboard user={user} />;
+      return <TeacherDashboard user={user as any} />;
   }
   
   if (user?.role === 'siswa') {
-    return <StudentDashboard user={user} />;
+    return <StudentDashboard user={user as any} />;
   }
 
   return null; // Atau halaman default jika role tidak dikenali

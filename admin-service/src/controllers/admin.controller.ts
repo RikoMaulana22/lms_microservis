@@ -1,21 +1,44 @@
 // Path: admin-service/src/controllers/admin.controller.ts
 
 import { Request, Response, NextFunction } from 'express';
-import { PrismaClient    } from '@prisma/client';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
+import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import bcrypt from 'bcrypt';
 import Papa from 'papaparse';
+import FormData from 'form-data';
 import fs from 'fs';
 import multer from 'multer';
 import axios from 'axios';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 
 const prisma = new PrismaClient();
 
-type Role = 'guru' | 'siswa' | 'admin' | 'wali_kelas';
-const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://localhost:5001/api/auth';
-const CLASS_SERVICE_URL = process.env.CLASS_SERVICE_URL || 'http://localhost:5002/api';
+const USER_SERVICE_URL = process.env.USER_SERVICE_URL;
+const CLASS_SERVICE_URL = process.env.CLASS_SERVICE_URL;
+const SCHEDULE_SERVICE_URL = process.env.SCHEDULE_SERVICE_URL;
+const ANNOUNCEMENT_SERVICE_URL = process.env.ANNOUNCEMENT_SERVICE_URL;
+const ATTENDANCE_SERVICE_URL = process.env.ATTENDANCE_SERVICE_URL;
+const ASSIGNMENT_SERVICE_URL = process.env.ASSIGNMENT_SERVICE_URL;
+
+export const forwardToAnnouncementService = (method: 'get' | 'post' | 'put' | 'delete') => {
+    return async (req: Request, res: Response) => {
+        const url = `${ANNOUNCEMENT_SERVICE_URL}${req.path.replace('/admin', '')}`;
+        try {
+            const response = await axios({
+                method,
+                url,
+                data: req.body,
+                params: req.query,
+                ...getForwardingHeaders(req),
+            });
+            res.status(response.status).json(response.data);
+        } catch (error: any) {
+            console.error(`Error forwarding to announcement-service:`, error.response?.data);
+            res.status(error.response?.status || 500).json(error.response?.data || { message: 'Internal Server Error' });
+        }
+    };
+};
 
 const getForwardingHeaders = (req: Request) => {
     return {
@@ -25,9 +48,56 @@ const getForwardingHeaders = (req: Request) => {
     };
 };
 
+export const updateClass = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+        const form = new FormData();
+
+        // Tambahkan semua field teks dari body ke form baru
+        for (const key in req.body) {
+            form.append(key, req.body[key]);
+        }
+
+        // Jika ada file yang diunggah, tambahkan ke form
+        if (req.file) {
+            const fileBuffer = fs.readFileSync(req.file.path);
+            form.append('image', fileBuffer, {
+                filename: req.file.originalname,
+                contentType: req.file.mimetype,
+            });
+        }
+
+        // Dapatkan header dari form-data, termasuk boundary
+        const formHeaders = form.getHeaders();
+        const customHeaders = {
+            ...getForwardingHeaders(req).headers,
+            ...formHeaders,
+        };
+
+        // Kirim form ke class-service menggunakan metode PUT
+        const response = await axios.put(`${CLASS_SERVICE_URL}/classes/${id}`, form, {
+            headers: customHeaders,
+        });
+
+        // Hapus file sementara setelah berhasil diteruskan
+        if (req.file) {
+            fs.unlinkSync(req.file.path);
+        }
+
+        res.status(200).json(response.data);
+
+    } catch (error: any) {
+        // Hapus file sementara jika terjadi error
+        if (req.file) {
+            fs.unlinkSync(req.file.path);
+        }
+        console.error("Error forwarding to class-service [updateClass]:", error.response?.data);
+        res.status(error.response?.status || 500).json(error.response?.data || { message: 'Internal Server Error' });
+    }
+};
+
 export const getAllUsers = async (req: Request, res: Response) => {
     try {
-        // Meneruskan query parameter 'role' jika ada
         const response = await axios.get(`${USER_SERVICE_URL}/users`, {
             params: req.query,
             ...getForwardingHeaders(req)
@@ -38,6 +108,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
         res.status(error.response?.status || 500).json(error.response?.data || { message: 'Internal Server Error' });
     }
 };
+
 
 export const createUser = async (req: Request, res: Response) => {
     try {
@@ -70,24 +141,26 @@ export const deleteUser = async (req: Request, res: Response) => {
         res.status(error.response?.status || 500).json(error.response?.data || { message: 'Internal Server Error' });
     }
 };
-export const getUsers = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-    const role = req.query.role as Role;
-    const whereCondition: { role?: Role } = {};
-    if (role && (role === 'guru' || role === 'siswa')) {
-        whereCondition.role = role;
-    }
+
+export const getAllSchedules = async (req: Request, res: Response) => {
     try {
-        const users = await prisma.user.findMany({
-            where: whereCondition,
-            select: { id: true, username: true, fullName: true, nisn: true, role: true, createdAt: true },
-            orderBy: { createdAt: 'desc' }
-        });
-        res.status(200).json(users);
-    } catch (error: unknown) {
-        console.error(`Gagal mengambil data pengguna:`, error);
-        res.status(500).json({ message: `Gagal mengambil data pengguna` });
+        const response = await axios.get(`${SCHEDULE_SERVICE_URL}/schedules`, { ...getForwardingHeaders(req) });
+        res.json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
     }
 };
+
+export const createSchedule = async (req: Request, res: Response) => {
+    try {
+        const response = await axios.post(`${SCHEDULE_SERVICE_URL}/schedules`, req.body, getForwardingHeaders(req));
+        res.status(201).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+};
+
+
 
 export const getSettings = async (req: Request, res: Response) => {
     try {
@@ -128,155 +201,108 @@ export const bulkCreateUsers = async (req: AuthRequest, res: Response) => {
     }
     const { role } = req.body;
     if (!['guru', 'siswa', 'wali_kelas'].includes(role)) {
+        fs.unlinkSync(req.file.path);
         return res.status(400).json({ message: 'Peran (role) yang dipilih tidak valid.' });
     }
     const filePath = req.file.path;
-    
+
     try {
         const fileContent = fs.readFileSync(filePath, 'utf8');
-        const usersToProcess = await new Promise<any[]>((resolve, reject) => {
-            const users: any[] = [];
+        const usersToCreate: any[] = [];
+        await new Promise<void>((resolve, reject) => {
             Papa.parse(fileContent, {
                 header: true,
                 skipEmptyLines: true,
                 step: (result) => {
-                    const row = result.data as any;
-                    if (!row.username || !row.password || !row.fullName || !row.email) {
-                        console.warn('[CSV Import] Melewatkan baris karena data tidak lengkap:', row);
-                        return;
-                    }
-                    users.push(row);
+                    usersToCreate.push(result.data);
                 },
-                complete: () => { resolve(users); },
-                error: (error: any) => { reject(error); }
+                complete: () => resolve(),
+                error: (error: any) => reject(error)
             });
         });
 
-        if (usersToProcess.length === 0) {
+        if (usersToCreate.length === 0) {
             return res.status(400).json({ message: 'Tidak ada data valid yang dapat diproses dari file CSV.' });
         }
 
-        await prisma.$transaction(async (tx: any) => {
-            for (const row of usersToProcess) {
-                const hashedPassword = await bcrypt.hash(row.password, 10);
-                const userData: any = {
-                    fullName: row.fullName,
-                    username: row.username,
-                    email: row.email,
-                    password: hashedPassword,
-                    role: role,
-                };
-                if (role === 'siswa') {
-                    userData.nisn = row.nisn || null;
-                }
-                const newUser = await tx.user.create({ data: userData });
-                if (role === 'wali_kelas' && row.homeroomClassId) {
-                    await tx.class.update({
-                        where: { id: parseInt(row.homeroomClassId) },
-                        data: { homeroomTeacherId: newUser.id }
-                    });
-                }
+        let successCount = 0;
+        const errors: any[] = [];
+
+        // Panggil user-service untuk setiap pengguna, satu per satu
+        for (const user of usersToCreate) {
+            try {
+                const payload = { ...user, role }; // Gabungkan data dari CSV dengan peran yang dipilih
+                // Kirim permintaan ke user-service untuk membuat pengguna
+                await axios.post(`${USER_SERVICE_URL}/users`, payload, getForwardingHeaders(req));
+                successCount++;
+            } catch (error: any) {
+                errors.push({ user: user.username, message: error.response?.data?.message || 'Unknown error' });
             }
-        });
-        res.status(201).json({ message: `${usersToProcess.length} akun ${role} berhasil dibuat.` });
-    } catch (error: unknown) { // Menangani error sebagai tipe 'unknown'
-        console.error("Gagal membuat kelas:", error);
-        // Lakukan pemeriksaan tipe secara eksplisit
-        if (error instanceof PrismaClientKnownRequestError && error.code === 'P2003') {
-            res.status(400).json({ message: 'ID Mata Pelajaran tidak valid.' });
-            return;
         }
-        res.status(500).json({ message: 'Terjadi kesalahan pada server saat membuat kelas.' });
+
+        res.status(201).json({
+            message: `Proses selesai. Berhasil membuat ${successCount} dari ${usersToCreate.length} pengguna.`,
+            errors
+        });
+
+    } catch (error) {
+        console.error("Gagal memproses file CSV:", error);
+        res.status(500).json({ message: 'Terjadi kesalahan pada server saat memproses file.' });
     } finally {
-        fs.unlinkSync(filePath);
+        fs.unlinkSync(filePath); // Pastikan file sementara dihapus
     }
 };
 
 export const getAttendanceReport = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-        const attendanceData = await prisma.class.findMany({
-            orderBy: { name: 'asc' },
-            select: {
-                name: true,
-                teacher: { select: { fullName: true } },
-                _count: { select: { members: true } },
-                topics: {
-                    where: { attendance: { isNot: null } },
-                    select: {
-                        title: true,
-                        attendance: {
-                            select: {
-                                title: true,
-                                openTime: true,
-                                _count: { select: { records: true } }
-                            }
-                        }
-                    }
-                }
+        // 1. Ambil semua kelas dari class-content-service
+        const classesResponse = await axios.get(`${CLASS_SERVICE_URL}/classes/all-details`, getForwardingHeaders(req));
+        const classes = classesResponse.data;
+
+        const report = [];
+
+        // 2. Lakukan iterasi untuk setiap kelas dan ambil data kehadiran dari attendance-service
+        for (const cls of classes) {
+            try {
+                // Diasumsikan ada endpoint ini di attendance-service
+                const attendanceResponse = await axios.get(`${ATTENDANCE_SERVICE_URL}/reports/class/${cls.id}`, getForwardingHeaders(req));
+                // 3. Gabungkan data
+                report.push(...attendanceResponse.data);
+            } catch (error) {
+                console.error(`Gagal mengambil laporan kehadiran untuk kelas ID ${cls.id}:`, error);
+                // Lanjutkan ke kelas berikutnya jika satu gagal
             }
-        });
-        const report = attendanceData.flatMap((cls: any) =>
-            cls.topics.map((topic: any) => ({
-                className: cls.name,
-                teacherName: cls.teacher.fullName,
-                totalStudents: cls._count.members,
-                topicTitle: topic.title,
-                attendanceTitle: topic.attendance!.title,
-                studentsPresent: topic.attendance!._count.records,
-                openTime: topic.attendance!.openTime,
-            }))
-        );
+        }
+
         res.status(200).json(report);
     } catch (error: unknown) {
+        console.error("Gagal membuat laporan kehadiran:", error);
         res.status(500).json({ message: 'Gagal mengambil laporan kehadiran.' });
     }
 };
 
 export const getGradeReport = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-        const classesWithAssignments = await prisma.class.findMany({
-            include: {
-                teacher: { select: { fullName: true } },
-                _count: { select: { members: true } },
-                topics: {
-                    include: {
-                        assignments: {
-                            include: {
-                                _count: { select: { submissions: true } },
-                                submissions: {
-                                    where: { score: { not: null } },
-                                    select: { score: true }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        });
+        // 1. Ambil semua kelas dari class-content-service
+        const classesResponse = await axios.get(`${CLASS_SERVICE_URL}/classes/all-details`, getForwardingHeaders(req));
+        const classes = classesResponse.data;
 
         const report = [];
-        for (const cls of classesWithAssignments as any[]) {
-            for (const topic of cls.topics as any[]) {
-                for (const assignment of topic.assignments as any[]) {
-                    const gradedSubmissions = assignment.submissions;
-                    let averageScore = 0;
-                    if (gradedSubmissions.length > 0) {
-                        const totalScore = gradedSubmissions.reduce((sum: number, sub: { score: number | null }) => sum + (sub.score ?? 0), 0);
-                        averageScore = totalScore / gradedSubmissions.length;
-                    }
-                    report.push({
-                        className: cls.name,
-                        teacherName: cls.teacher.fullName,
-                        assignmentTitle: assignment.title,
-                        totalSubmissions: assignment._count.submissions,
-                        totalStudents: cls._count.members,
-                        averageScore: parseFloat(averageScore.toFixed(2)),
-                    });
-                }
+
+        // 2. Lakukan iterasi untuk setiap kelas dan ambil data tugas & nilai dari assignment-service
+        for (const cls of classes) {
+            try {
+                // Diasumsikan ada endpoint ini di assignment-service
+                const gradeResponse = await axios.get(`${ASSIGNMENT_SERVICE_URL}/reports/class/${cls.id}`, getForwardingHeaders(req));
+                // 3. Gabungkan data
+                report.push(...gradeResponse.data);
+            } catch (error) {
+                console.error(`Gagal mengambil laporan nilai untuk kelas ID ${cls.id}:`, error);
             }
         }
         res.status(200).json(report);
     } catch (error: unknown) {
+        console.error("Gagal membuat laporan nilai:", error);
         res.status(500).json({ message: 'Gagal mengambil laporan nilai.' });
     }
 };
@@ -286,31 +312,13 @@ export const getGradeReport = async (req: AuthRequest, res: Response): Promise<v
 
 
 export const deleteClass = async (req: Request, res: Response) => {
-    const { id } = req.params;
     try {
-        const classToDelete = await prisma.class.findUnique({
-            where: { id: Number(id) },
-            include: {
-                _count: {
-                    select: { members: true }
-                }
-            }
-        });
-        if (classToDelete && classToDelete._count.members > 0) {
-            return res.status(400).json({
-                message: `Gagal menghapus: Kelas masih memiliki ${classToDelete._count.members} siswa terdaftar.`
-            });
-        }
-        await prisma.class.delete({
-            where: { id: Number(id) },
-        });
-        res.status(200).json({ message: 'Kelas berhasil dihapus' });
-    } catch (error: unknown) {
-        console.error('Gagal menghapus kelas:', error);
-        if (typeof error === 'object' && error !== null && 'code' in error && (error as any).code === 'P2025') {
-            return res.status(404).json({ message: 'Kelas tidak ditemukan.' });
-        }
-        res.status(500).json({ message: 'Gagal menghapus kelas karena kesalahan server.' });
+        const { id } = req.params;
+        const response = await axios.delete(`${CLASS_SERVICE_URL}/classes/${id}`, getForwardingHeaders(req));
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        console.error("Error forwarding to class-service [deleteClass]:", error.response?.data);
+        res.status(error.response?.status || 500).json(error.response?.data);
     }
 };
 
@@ -373,69 +381,131 @@ export const getAvailableClassesForHomeroom = async (req: AuthRequest, res: Resp
 };
 
 export const getAllClasses = async (req: Request, res: Response) => {
-  try {
-    const authHeader = req.headers.authorization;
+    try {
+        const classPromise = axios.get(`${CLASS_SERVICE_URL}/classes/all`, {
+            params: req.query,
+            ...getForwardingHeaders(req)
+        });
+        const usersPromise = axios.get(`${USER_SERVICE_URL}/users`, getForwardingHeaders(req));
+        const [classResponse, usersResponse] = await Promise.all([classPromise, usersPromise]);
 
-    if (!authHeader) {
-      return res.status(401).json({ message: 'Akses ditolak. Token tidak tersedia di header.' });
+        const classes = classResponse.data;
+        const users = usersResponse.data;
+        const userMap = new Map(users.map((user: any) => [user.id, user]));
+
+        const combinedData = classes.map((cls: any) => ({
+            ...cls,
+            teacher: userMap.get(cls.teacherId) || { fullName: 'Tidak Ditemukan' },
+            homeroomTeacher: userMap.get(cls.homeroomTeacherId) || null
+        }));
+
+        res.json(combinedData);
+    } catch (error: any) {
+        console.error("Error orchestrating classes and users:", error.response?.data);
+        res.status(error.response?.status || 500).json(error.response?.data || { message: 'Gagal mengambil data kelas.' });
     }
-
-    const response = await axios.get('http://localhost:5008/api/classes', { // Ganti port jika perlu
-      headers: {
-        'Authorization': authHeader
-      }
-    });
-    
-    res.json(response.data);
-
-  } catch (error) {
-    // ======== PERBAIKAN DI SINI ========
-
-    // 1. Gunakan type guard untuk memeriksa apakah ini error dari Axios
-    if (axios.isAxiosError(error)) {
-      // 2. Di dalam blok if ini, TypeScript sekarang tahu bahwa 'error' adalah AxiosError
-      //    sehingga aman untuk mengakses error.response
-      console.error('Error forwarding to class-service:', error.response?.data);
-      
-      // Kirim status dan pesan error yang sama dari service yang gagal
-      res.status(error.response?.status || 500).json(error.response?.data);
-
-    } else {
-      // 3. Tangani kasus jika error bukan dari Axios
-      console.error('An unexpected error occurred:', error);
-      res.status(500).json({ message: 'Terjadi kesalahan yang tidak terduga di server' });
-    }
-  }
 };
+
 
 export const getAllTeachers = async (req: Request, res: Response) => {
     try {
-        const teachers = await prisma.user.findMany({
-            where: { role: { in: ['guru', 'wali_kelas'] } },
-            select: { id: true, fullName: true }
-        });
-        res.json(teachers);
-    } catch (error: unknown) {
-        res.status(500).json({ message: 'Gagal mengambil data guru.' });
+        const teacherPromise = axios.get(`${USER_SERVICE_URL}/users?role=guru`, getForwardingHeaders(req));
+        const homeroomPromise = axios.get(`${USER_SERVICE_URL}/users?role=wali_kelas`, getForwardingHeaders(req));
+        const [teacherResponse, homeroomResponse] = await Promise.all([teacherPromise, homeroomPromise]);
+        const allTeachers = [...teacherResponse.data, ...homeroomResponse.data];
+        const uniqueTeachers = Array.from(new Map(allTeachers.map(teacher => [teacher.id, teacher])).values());
+        res.json(uniqueTeachers);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data || { message: 'Gagal mengambil data guru.' });
+    }
+};
+
+export const createSubject = async (req: Request, res: Response) => {
+    try {
+        const response = await axios.post(`${CLASS_SERVICE_URL}/subjects`, req.body, getForwardingHeaders(req));
+        res.status(201).json(response.data);
+    } catch (error: any) {
+        console.error("Error forwarding to class-content-service [createSubject]:", error.response?.data);
+        res.status(error.response?.status || 500).json(error.response?.data || { message: 'Internal Server Error' });
+    }
+};
+
+export const updateSubject = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+        const response = await axios.put(`${CLASS_SERVICE_URL}/subjects/${id}`, req.body, getForwardingHeaders(req));
+        res.status(200).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+};
+
+export const deleteSubject = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+        await axios.delete(`${CLASS_SERVICE_URL}/subjects/${id}`, getForwardingHeaders(req));
+        res.status(204).send();
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
     }
 };
 
 export const getAllSubjects = async (req: Request, res: Response) => {
     try {
-        const subjects = await prisma.subject.findMany({
-            select: { id: true, name: true }
+        // Teruskan permintaan GET ke class-content-service, termasuk query params seperti 'grade'
+        const response = await axios.get(`${CLASS_SERVICE_URL}/subjects`, {
+            params: req.query, // Ini akan meneruskan filter 'grade' jika ada
+            ...getForwardingHeaders(req)
         });
-        res.json(subjects);
-    } catch (error: unknown) {
-        res.status(500).json({ message: 'Gagal mengambil data mata pelajaran.' });
+        res.json(response.data);
+    } catch (error: any) {
+        console.error("Error forwarding to class-content-service [getAllSubjects]:", error.response?.data);
+        res.status(error.response?.status || 500).json(error.response?.data || { message: 'Gagal mengambil data mata pelajaran.' });
     }
 };
 
 export const createClass = async (req: Request, res: Response) => {
     try {
-        const response = await axios.post(`${CLASS_SERVICE_URL}/classes`, req.body, getForwardingHeaders(req));
+        const form = new FormData();
+
+        // Tambahkan semua field teks dari body ke form baru
+        for (const key in req.body) {
+            form.append(key, req.body[key]);
+        }
+
+        // Jika ada file yang diunggah, baca sebagai buffer dan tambahkan ke form
+        if (req.file) {
+            const fileBuffer = fs.readFileSync(req.file.path);
+            form.append('image', fileBuffer, {
+                filename: req.file.originalname,
+                contentType: req.file.mimetype,
+            });
+        }
+        
+        // Dapatkan header dari form-data, termasuk boundary
+        const formHeaders = form.getHeaders();
+        const customHeaders = {
+            ...getForwardingHeaders(req).headers,
+            ...formHeaders,
+        };
+
+        // Kirim form ke class-content-service
+        const response = await axios.post(`${CLASS_SERVICE_URL}/classes`, form, {
+            headers: customHeaders,
+        });
+
+        // Hapus file sementara setelah berhasil diteruskan
+        if (req.file) {
+            fs.unlinkSync(req.file.path);
+        }
+
         res.status(201).json(response.data);
+
     } catch (error: any) {
+        // Hapus file sementara jika terjadi error
+        if (req.file) {
+            fs.unlinkSync(req.file.path);
+        }
         console.error("Error forwarding to class-service [createClass]:", error.response?.data);
         res.status(error.response?.status || 500).json(error.response?.data || { message: 'Internal Server Error' });
     }
@@ -464,7 +534,7 @@ export const assignHomeroomTeacher = async (req: AuthRequest, res: Response) => 
         const teacher = await prisma.user.findFirst({
             where: { id: Number(teacherId), role: 'wali_kelas' }
         });
-        
+
         if (!teacher) {
             return res.status(404).json({ message: "Wali Kelas tidak ditemukan atau ID tidak valid." });
         }
@@ -495,7 +565,7 @@ export const getClassEnrollments = async (req: Request, res: Response) => {
                 },
                 homeroomTeacher: {
                     select: { id: true, fullName: true }
-                } 
+                }
             }
         });
 
@@ -515,7 +585,7 @@ export const getClassEnrollments = async (req: Request, res: Response) => {
         const assignedHomeroomTeacherIds = (await prisma.class.findMany({
             where: {
                 homeroomTeacherId: { not: null },
-                id: { not: parseInt(classId) } 
+                id: { not: parseInt(classId) }
             },
             select: { homeroomTeacherId: true }
         })).map((c: { homeroomTeacherId: any; }) => c.homeroomTeacherId as number);
@@ -550,7 +620,7 @@ export const testGetAllWaliKelas = async (req: Request, res: Response) => {
         });
         console.log("--- HASIL TES ---");
         console.log(allWaliKelas);
-        
+
         res.status(200).json({
             message: "Hasil tes pencarian 'wali_kelas'. Cek terminal backend Anda untuk detail.",
             count: allWaliKelas.length,
@@ -563,18 +633,13 @@ export const testGetAllWaliKelas = async (req: Request, res: Response) => {
 };
 
 export const enrollStudent = async (req: Request, res: Response) => {
-    const { classId } = req.params;
-    const { studentId } = req.body;
     try {
-        await prisma.class_Members.create({
-            data: {
-                classId: parseInt(classId),
-                studentId: parseInt(studentId),
-            }
-        });
-        res.status(201).json({ message: 'Siswa berhasil didaftarkan.' });
-    } catch (error: unknown) {
-        res.status(409).json({ message: 'Siswa sudah terdaftar di kelas ini.' });
+        const { classId } = req.params;
+        const response = await axios.post(`${CLASS_SERVICE_URL}/classes/${classId}/enroll`, req.body, getForwardingHeaders(req));
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        console.error("Error forwarding to class-service [enrollStudent]:", error.response?.data);
+        res.status(error.response?.status || 500).json(error.response?.data);
     }
 };
 
@@ -594,3 +659,4 @@ export const unenrollStudent = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Gagal mengeluarkan siswa.' });
     }
 };
+

@@ -5,20 +5,14 @@ import adminApiClient from '@/lib/axiosAdmin';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
 
-interface Teacher { id: number; fullName: string; }
-interface Subject { id: number; name: string; }
-interface ClassInfo { 
-    id: number; 
-    name: string; 
-    description?: string; 
-    subject: { id: number }; 
-    teacher: { id: number }; 
-}
+import { Teacher, Subject, ClassInfo } from '@/types';
+
 
 interface EditClassModalProps {
     isOpen: boolean;
     onClose: () => void;
     onClassUpdated: () => void;
+    // 2. Gunakan tipe ClassInfo yang sudah diimpor
     classData: ClassInfo | null;
 }
 
@@ -27,6 +21,8 @@ export default function EditClassModal({ isOpen, onClose, onClassUpdated, classD
     const [description, setDescription] = useState('');
     const [subjectId, setSubjectId] = useState('');
     const [teacherId, setTeacherId] = useState('');
+    const [homeroomTeacherId, setHomeroomTeacherId] = useState('');
+
     const [teachers, setTeachers] = useState<Teacher[]>([]);
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -48,7 +44,7 @@ export default function EditClassModal({ isOpen, onClose, onClassUpdated, classD
                     setDescription(classData.description || '');
                     setSubjectId(classData.subject.id.toString());
                     setTeacherId(classData.teacher.id.toString());
-                    
+                    setHomeroomTeacherId(classData.homeroomTeacher?.id.toString() || '');
                     setIsDataLoaded(true);
                 } catch (error) {
                     toast.error("Gagal memuat data form.");
@@ -101,6 +97,14 @@ export default function EditClassModal({ isOpen, onClose, onClassUpdated, classD
                         <label className="block text-sm font-medium">Guru Pengajar</label>
                         <select value={teacherId} onChange={e => setTeacherId(e.target.value)} required className="form-select w-full mt-1">
                             <option value="">-- Pilih Guru --</option>
+                            {teachers.map(teacher => <option key={teacher.id} value={teacher.id}>{teacher.fullName}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium">Wali Kelas</label>
+                        <select value={homeroomTeacherId} onChange={e => setHomeroomTeacherId(e.target.value)} required className="form-select w-full mt-1">
+                            <option value="">-- Pilih Wali Kelas --</option>
+                            {/* The same list of teachers is used */}
                             {teachers.map(teacher => <option key={teacher.id} value={teacher.id}>{teacher.fullName}</option>)}
                         </select>
                     </div>

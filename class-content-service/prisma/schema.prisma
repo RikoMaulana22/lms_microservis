@@ -17,27 +17,36 @@ model Subject {
 }
 
 model Class {
-  id                Int      @id @default(autoincrement())
+  id                Int       @id @default(autoincrement())
   name              String
   description       String?
   imageUrl          String?
-  createdAt         DateTime @default(now())
+  createdAt         DateTime  @default(now())
   teacherId         Int
-  subject           Subject  @relation(fields: [subjectId], references: [id])
-  subjectId         Int
   homeroomTeacherId Int?
+  subject           Subject   @relation(fields: [subjectId], references: [id])
+  subjectId         Int
   topics            Topic[]
+  members           Class_Members[]
+  pengajar        Teacher @relation("KelasDiajar", fields: [teacherId], references: [id])
+  waliKelas       Teacher? @relation("WaliKelas", fields: [homeroomTeacherId], references: [id])
+}
+
+model Teacher {
+  id          Int     @id @default(autoincrement())
+  fullName    String
+  kelasDiajar Class[] @relation("KelasDiajar")
+  jadiWali    Class[] @relation("WaliKelas")
 }
 
 model Topic {
-  id          Int        @id @default(autoincrement())
-  title       String
-  order       Int
-  createdAt   DateTime   @default(now())
-  class       Class      @relation(fields: [classId], references: [id], onDelete: Cascade)
-  classId     Int
-  materials   Material[]
-  // Relasi ke 'Assignment' dihapus karena dikelola oleh assignment-service
+  id        Int      @id @default(autoincrement())
+  title     String
+  order     Int
+  createdAt DateTime @default(now())
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  classId   Int
+  materials Material[]
 }
 
 model Material {
@@ -49,4 +58,12 @@ model Material {
   createdAt  DateTime @default(now())
   topic      Topic?   @relation(fields: [topicId], references: [id], onDelete: SetNull)
   topicId    Int?
+}
+
+model Class_Members {
+  classId   Int
+  studentId Int
+
+  @@id([studentId, classId])
+  class     Class @relation(fields: [classId], references: [id], onDelete: Cascade)
 }

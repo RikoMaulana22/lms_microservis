@@ -11,7 +11,7 @@ const router = Router();
 router.get('/', authenticate, getLatestAnnouncements);
 
 // Rute khusus admin - Perlu login
-router.get('/all', authenticate, checkRole('admin'), getAllAnnouncements);
+router.get('/', authenticate, checkRole('admin'), getAllAnnouncements);
 router.post('/', authenticate, checkRole('admin'), createAnnouncement);
 router.delete('/:id', authenticate, checkRole('admin'), deleteAnnouncement);
 

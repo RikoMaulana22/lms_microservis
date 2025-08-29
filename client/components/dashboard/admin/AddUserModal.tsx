@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, FormEvent, useEffect } from 'react';
-import classContentApiClient from '@/lib/axiosClassContent';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
 import adminApiClient from '@/lib/axiosAdmin';
@@ -46,7 +45,8 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }: AddUserMo
     if (isOpen && formData.role === 'wali_kelas') {
       const fetchClasses = async () => {
         try {
-          const response = await adminApiClient.get('/users');
+          // ✅ PERBAIKAN: Endpoint API diubah ke /classes untuk mengambil daftar kelas
+          const response = await adminApiClient.get('/classes'); 
           setAvailableClasses(response.data);
         } catch (error) {
           toast.error("Gagal memuat daftar kelas.");
@@ -86,51 +86,56 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }: AddUserMo
 
   return (
     <div className='text-gray-900'>
-    <Modal isOpen={isOpen} onClose={handleClose} title="Tambah Pengguna Baru">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Input untuk fullName, username, password, email */}
-        <input type="text" name="fullName" value={formData.fullName} onChange={handleChange} placeholder="Nama Lengkap" required className="form-input max-w-md p-2 border-2 border-gray-400 rounded-md w-full" />
-        <input type="text" name="username" value={formData.username} onChange={handleChange} placeholder="Username" required className="form-input max-w-md p-2 border-2 border-gray-400 rounded-md w-full" />
-        <input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="Password" required className="form-input max-w-md p-2 border-2 border-gray-400 rounded-md w-full" />
-        <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Email" required className="form-input max-w-md p-2 border-2 border-gray-400 rounded-md w-full" />
-        
-        <div>
-          <label className="block text-sm font-medium">Peran</label>
-          <select name="role" value={formData.role} onChange={handleChange} className="form-input max-w-md p-2 border-2 border-gray-400 rounded-md w-full">
-            <option value="siswa">Siswa</option>
-            <option value="guru">Guru</option>
-            <option value="wali_kelas">Wali Kelas</option>
-            <option value="admin">Admin</option>
-          </select>
+      {/* ✅ PERUBAHAN 1: Tambahkan prop size="fullscreen" */}
+      <Modal isOpen={isOpen} onClose={handleClose} title="Tambah Pengguna Baru" isFullScreen>
+        {/* ✅ PERUBAHAN 2: Wrapper untuk menjaga form tetap rapi di tengah */}
+        <div className="max-w-xl mx-auto mt-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* ✅ PERUBAHAN 3: Ubah 'max-w-md' menjadi 'w-full' agar konsisten */}
+            <input type="text" name="fullName" value={formData.fullName} onChange={handleChange} placeholder="Nama Lengkap" required className="form-input w-full p-2 border border-gray-300 rounded-md" />
+            <input type="text" name="username" value={formData.username} onChange={handleChange} placeholder="Username" required className="form-input w-full p-2 border border-gray-300 rounded-md" />
+            <input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="Password" required className="form-input w-full p-2 border border-gray-300 rounded-md" />
+            <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Email" required className="form-input w-full p-2 border border-gray-300 rounded-md" />
+            
+            <div>
+              <label className="block text-sm font-medium">Peran</label>
+              <select name="role" value={formData.role} onChange={handleChange} className="form-select w-full p-2 border border-gray-300 rounded-md">
+                <option value="siswa">Siswa</option>
+                <option value="guru">Guru</option>
+                <option value="wali_kelas">Wali Kelas</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+
+            {formData.role === 'siswa' && (
+              <div>
+                <label className="block text-sm font-medium">NISN (Opsional)</label>
+                <input type="text" name="nisn" value={formData.nisn} onChange={handleChange} placeholder="NISN" className="form-input w-full p-2 border border-gray-300 rounded-md" />
+              </div>
+            )}
+
+            {/* ✅ PERUBAHAN 4: Bagian Wali Kelas diaktifkan kembali */}
+            {formData.role === 'wali_kelas' && (
+              <div>
+                <label className="block text-sm font-medium">Tugaskan ke Kelas</label>
+                <select name="homeroomClassId" value={formData.homeroomClassId} onChange={handleChange} required className="form-select w-full p-2 border border-gray-300 rounded-md">
+                  <option value="">-- Pilih Kelas --</option>
+                  {availableClasses.map(cls => (
+                    <option key={cls.id} value={cls.id}>{cls.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-4 pt-4 border-t mt-6">
+              <button type="button" onClick={handleClose} className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Batal</button>
+              <button type="submit" disabled={isLoading} className="btn-primary">
+                {isLoading ? 'Menyimpan...' : 'Simpan Pengguna'}
+              </button>
+            </div>
+          </form>
         </div>
-
-        {formData.role === 'siswa' && (
-          <div>
-            <label className="block text-sm font-medium">NISN (Opsional)</label>
-            <input type="text" name="nisn" value={formData.nisn} onChange={handleChange} className="form-input max-w-md p-2 border-2 border-gray-400 rounded-md w-full" />
-          </div>
-        )}
-
-        {/* {formData.role === 'wali_kelas' && (
-          <div>
-            <label className="block text-sm font-medium">Tugaskan ke Kelas</label>
-            <select name="homeroomClassId" value={formData.homeroomClassId} onChange={handleChange} required className="form-select w-full mt-1">
-              <option value="">-- Pilih Kelas --</option>
-              {availableClasses.map(cls => (
-                <option key={cls.id} value={cls.id}>{cls.name}</option>
-              ))}
-            </select>
-          </div>
-        )} */}
-
-        <div className="flex justify-end gap-4 pt-4 border-t mt-6">
-          <button type="button" onClick={handleClose} className="px-4 py-2 bg-gray-200 rounded-lg">Batal</button>
-          <button type="submit" disabled={isLoading} className="btn-primary">
-            {isLoading ? 'Menyimpan...' : 'Simpan Pengguna'}
-          </button>
-        </div>
-      </form>
-    </Modal>
+      </Modal>
     </div>
   );
 }

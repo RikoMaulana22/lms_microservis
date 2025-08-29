@@ -10,6 +10,6 @@ const router = Router();
 router.get('/', getSettings);
 
 // Rute khusus admin untuk memperbarui pengaturan
-router.post('/', authenticate, checkRole('admin'), updateSettings);
+router.put('/', authenticate, checkRole('admin'), updateSettings);
 
 export default router;

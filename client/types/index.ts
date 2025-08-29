@@ -12,6 +12,11 @@ export interface User {
 
 
 }
+
+export interface Teacher { 
+    id: number; 
+    fullName: string; 
+}
 export interface Settings {
   schoolName?: string;
   // Di masa depan, Anda bisa menambahkan pengaturan lain di sini
@@ -22,6 +27,10 @@ export interface Settings {
 export interface ClassInfo {
   id: number;
   name: string;
+  description?: string;
+  subject: Subject;
+  teacher: Teacher;
+  homeroomTeacher: Teacher | null; // homeroomTeacher bisa berupa objek Teacher lengkap atau null
 }
 
 export interface Subject {
@@ -40,8 +49,9 @@ export interface ClassSummary {
     name: string;
   };
   // --- TAMBAHKAN PROPERTI INI ---
-  teacher: {
+  Teacher: {
     fullName: string;
+    id :number;
   };
   // ------------------------------
   _count: {

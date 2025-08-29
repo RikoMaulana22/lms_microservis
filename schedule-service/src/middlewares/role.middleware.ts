@@ -1,8 +1,9 @@
-import {Request, Response, NextFunction } from 'express';
+// Path: schedule-service/src/middlewares/role.middleware.ts
+import { Response, NextFunction } from 'express';
 import { AuthRequest } from './auth.middleware';
-type Role = 'guru' | 'siswa' | 'admin' | 'wali_kelas';
 
-export const checkRole = (roles: Role | Role[]) => {
+// PERBAIKAN: Middleware ini sekarang menerima string, bukan enum Prisma
+export const checkRole = (roles: string | string[]) => {
     return (req: AuthRequest, res: Response, next: NextFunction) => {
         const userRole = req.user?.role;
 
@@ -10,11 +11,9 @@ export const checkRole = (roles: Role | Role[]) => {
             return res.status(401).json({ message: 'Otentikasi diperlukan, peran tidak ditemukan.' });
         }
 
-        // Ubah input 'roles' menjadi array agar mudah diperiksa
         const requiredRoles = Array.isArray(roles) ? roles : [roles];
 
-        // Cek apakah peran pengguna ada di dalam array peran yang diizinkan
-        if (requiredRoles.includes(userRole as Role)) {
+        if (requiredRoles.map(role => role.toUpperCase()).includes(userRole.toUpperCase())) {
             next(); // Peran cocok, lanjutkan
         } else {
             res.status(403).json({ message: 'Akses ditolak. Anda tidak memiliki peran yang sesuai.' });

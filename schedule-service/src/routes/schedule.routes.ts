@@ -1,3 +1,4 @@
+// Path: schedule-service/src/routes/schedule.routes.ts
 import { Router } from 'express';
 import { 
     createSchedule, 
@@ -5,23 +6,27 @@ import {
     getMySchedule, 
     deleteSchedule, 
     updateSchedule,
-    getPublicSchedules 
+    getSchedulesByClass,
+    getTeachers // <-- Pastikan ini diimpor
 } from '../controllers/schedule.controller';
 import { authenticate } from '../middlewares/auth.middleware'; 
 import { checkRole } from '../middlewares/role.middleware';
 
 const router = Router();
 
-// --- PERBAIKI RUTE ADMIN DENGAN MENAMBAHKAN 'authenticate' ---
-router.get('/', authenticate, checkRole('admin'), getAllSchedules);
+// Rute untuk mengambil semua jadwal (untuk tabel di halaman utama)
+router.get('/', authenticate, checkRole(['admin', 'wali_kelas']), getAllSchedules);
+
+// Rute untuk mengambil daftar guru (untuk dropdown di form modal)
+router.get('/teachers', authenticate, getTeachers);
+
+// Rute CRUD untuk jadwal
 router.post('/', authenticate, checkRole('admin'), createSchedule);
 router.put('/:id', authenticate, checkRole('admin'), updateSchedule);
 router.delete('/:id', authenticate, checkRole('admin'), deleteSchedule);
 
-// --- Rute untuk Siswa & Guru (Perlu 'authenticate') ---
+// Rute untuk pengguna lain
 router.get('/my', authenticate, getMySchedule);
-
-// --- Rute Publik (Sudah Benar, tidak perlu 'authenticate') ---
-router.get('/public', getPublicSchedules);
+router.get('/class/:classId', authenticate, getSchedulesByClass);
 
 export default router;

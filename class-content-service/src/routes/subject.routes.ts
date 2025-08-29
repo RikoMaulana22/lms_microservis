@@ -12,7 +12,7 @@ router.get('/', authenticate, getAllSubjects);
 router.get('/grouped', authenticate, getGroupedSubjects);
 
 // Rute khusus admin (sudah benar)
-router.post('/', authenticate, checkRole('admin'), createSubject);
+router.post('', authenticate, checkRole('admin'), createSubject);
 router.put('/:id', authenticate, checkRole('admin'), updateSubject);
 router.delete('/:id', authenticate, checkRole('admin'), deleteSubject);
 

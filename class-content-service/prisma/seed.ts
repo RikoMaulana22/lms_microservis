@@ -10,7 +10,6 @@ async function main() {
   // Hapus data dalam urutan yang benar untuk menghindari error foreign key
   await prisma.class_Members.deleteMany({});
   await prisma.material.deleteMany({});
-  await prisma.assignment.deleteMany({});
   await prisma.class.deleteMany({});
   console.log('Deleted old classes and related data.');
 

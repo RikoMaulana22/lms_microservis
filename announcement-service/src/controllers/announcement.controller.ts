@@ -12,10 +12,11 @@ export const getLatestAnnouncements = async (req: AuthRequest, res: Response): P
         const announcements = await prisma.announcement.findMany({
             take: 5, // Ambil 5 pengumuman terbaru
             orderBy: { createdAt: 'desc' },
-            include: { author: { select: { fullName: true } } }
+            // Dihapus: `include` tidak bisa digunakan karena tabel User ada di service lain
         });
         res.status(200).json(announcements);
     } catch (error) {
+        console.error("Error fetching latest announcements:", error);
         res.status(500).json({ message: 'Gagal mengambil pengumuman.' });
     }
 };
@@ -26,10 +27,11 @@ export const getAllAnnouncements = async (req: AuthRequest, res: Response): Prom
     try {
         const announcements = await prisma.announcement.findMany({
             orderBy: { createdAt: 'desc' },
-            include: { author: { select: { fullName: true } } }
+            // Dihapus: `include` tidak bisa digunakan
         });
         res.status(200).json(announcements);
     } catch (error) {
+        console.error("Error fetching all announcements:", error);
         res.status(500).json({ message: 'Gagal mengambil pengumuman.' });
     }
 };
@@ -37,17 +39,25 @@ export const getAllAnnouncements = async (req: AuthRequest, res: Response): Prom
 // Admin membuat pengumuman baru
 export const createAnnouncement = async (req: AuthRequest, res: Response): Promise<void> => {
     const { title, content } = req.body;
-    const authorId = req.user?.userId;
-    if (!title || !content || !authorId) {
+    const authorId = req.user?.userId; // Diambil dari token
+
+    if (!title || !content) {
         res.status(400).json({ message: 'Judul dan konten wajib diisi.' });
         return;
     }
+    if (!authorId) {
+        // Error spesifik jika pengguna tidak terautentikasi
+        res.status(401).json({ message: 'Akses ditolak. Author ID tidak ditemukan.' });
+        return;
+    }
+
     try {
         const newAnnouncement = await prisma.announcement.create({
-            data: { title, content, authorId }
+            data: { title, content, authorId },
         });
         res.status(201).json(newAnnouncement);
     } catch (error) {
+        console.error("Error creating announcement:", error);
         res.status(500).json({ message: 'Gagal membuat pengumuman.' });
     }
 };
@@ -56,9 +66,14 @@ export const createAnnouncement = async (req: AuthRequest, res: Response): Promi
 export const deleteAnnouncement = async (req: AuthRequest, res: Response): Promise<void> => {
     const { id } = req.params;
     try {
-        await prisma.announcement.delete({ where: { id: Number(id) } });
-        res.status(200).json({ message: 'Pengumuman berhasil dihapus.' });
+        await prisma.announcement.delete({
+            // Perbaikan: ID di database adalah String (UUID/CUID), bukan Number
+            where: { id: Number(id) }
+        });
+        // Respon standar untuk DELETE yang sukses adalah 204 No Content
+        res.status(204).send();
     } catch (error) {
+        console.error("Error deleting announcement:", error);
         res.status(500).json({ message: 'Gagal menghapus pengumuman.' });
     }
 };

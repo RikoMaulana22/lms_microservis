@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const attendanceApiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL_ATTENDANCE || 'http://localhost:5008/api/attendances',
+  baseURL: process.env.NEXT_PUBLIC_API_URL_ATTENDANCE || 'http://localhost:5004/api/attendance',
   headers: {
         'Content-Type': 'application/json',
     },

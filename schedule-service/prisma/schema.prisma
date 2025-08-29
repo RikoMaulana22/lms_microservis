@@ -1,5 +1,3 @@
-// schedule-service/prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,25 +7,45 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// --- ENUMS ---
 enum DayOfWeek {
-  SENIN
-  SELASA
-  RABU
-  KAMIS
-  JUMAT
-  SABTU
-  MINGGU
+    SENIN
+    SELASA
+    RABU
+    KAMIS
+    JUMAT
+    SABTU
+    MINGGU
 }
 
-// --- MODELS ---
+model Class {
+  id        Int        @id @default(autoincrement())
+  name      String
+  schedules Schedule[]
+}
+
+model Subject {
+  id        Int        @id @default(autoincrement())
+  name      String
+  grade     Int // Menambahkan kembali kolom grade
+  schedules Schedule[]
+}
+
+model User {
+  id        Int        @id @default(autoincrement())
+  fullName  String
+  schedules Schedule[]
+}
+
 model Schedule {
   id        Int       @id @default(autoincrement())
   dayOfWeek DayOfWeek
   startTime String
   endTime   String
-  
   classId   Int
   subjectId Int
   teacherId Int
+
+  class     Class     @relation(fields: [classId], references: [id])
+  subject   Subject   @relation(fields: [subjectId], references: [id])
+  teacher   User      @relation(fields: [teacherId], references: [id])
 }

@@ -6,16 +6,10 @@ import CreateClassModal from '@/components/dashboard/CreateClassModal'; // Pasti
 import EditClassModal from '@/components/dashboard/admin/EditClassModal';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+import { ClassInfo } from '@/types';
 
 // Interface untuk data kelas yang akan ditampilkan
-interface ClassInfo {
-    id: number;
-    name: string;
-    description?: string;
-    subject: { id: number; name: string; grade: number; };
-    teacher: { id: number; fullName: string };
-    homeroomTeacher: { fullName: string } | null;
-}
+
 
 export default function ClassManagementPage() {
     const [classes, setClasses] = useState<ClassInfo[]>([]);
@@ -82,7 +76,7 @@ export default function ClassManagementPage() {
                 isOpen={isEditModalOpen}
                 onClose={handleCloseEditModal}
                 onClassUpdated={fetchData}
-                classData={selectedClass}
+                classData={selectedClass} // ✅ Sekarang tipe datanya akan cocok
             />
             {/* ------------------------- */}
 
