@@ -1,21 +1,23 @@
-import {Request, Response, NextFunction } from 'express';
-import { AuthRequest, TokenPayload } from './auth.middleware';
-type Role = 'guru' | 'siswa' | 'admin' | 'wali_kelas';
+// shared/middlewares/role.middleware.ts
 
-export const checkRole = (roles: Role | Role[]) => {
+import { Response, NextFunction } from 'express';
+import { AuthRequest, TokenPayload } from './auth.middleware';
+
+// Menggunakan tipe Role dari TokenPayload untuk konsistensi
+type Role = TokenPayload['role'];
+
+export const authorize = (allowedRoles: Role | Role[]) => {
     return (req: AuthRequest, res: Response, next: NextFunction) => {
         const userRole = req.user?.role;
 
         if (!userRole) {
-            return res.status(401).json({ message: 'Otentikasi diperlukan, peran tidak ditemukan.' });
+            return res.status(401).json({ message: 'Otentikasi diperlukan, peran pengguna tidak ditemukan.' });
         }
 
-        // Ubah input 'roles' menjadi array agar mudah diperiksa
-        const requiredRoles = Array.isArray(roles) ? roles : [roles];
+        const requiredRoles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
 
-        // Cek apakah peran pengguna ada di dalam array peran yang diizinkan
-        if (requiredRoles.includes(userRole as Role)) {
-            next(); // Peran cocok, lanjutkan
+        if (requiredRoles.includes(userRole)) {
+            next(); // Peran cocok, lanjutkan ke controller
         } else {
             res.status(403).json({ message: 'Akses ditolak. Anda tidak memiliki peran yang sesuai.' });
         }

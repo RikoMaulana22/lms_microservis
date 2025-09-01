@@ -1,17 +1,25 @@
-// services/1-user-service/src/routes/user.routes.ts
 import { Router } from 'express';
-import { getMyProfile, updateMyProfile,getUserById, getAllUsers } from '../controllers/user.controller';
-// import { authenticate } from 'shared/src/middlewares/auth.middleware'; // Nanti ditambahkan
 import { authenticate } from 'shared/middlewares/auth.middleware';
+import { authorize } from 'shared/middlewares/role.middleware';
+import { 
+    getMyProfile, 
+    updateMyProfile, 
+    getUserById, 
+    getAllUsers, 
+    createUser, 
+    deleteUser 
+} from '../controllers/user.controller';
 
 const router = Router();
 
-// Endpoint ini akan dipanggil oleh layanan lain
-router.get('/:id', getUserById);
-router.get('/', getAllUsers);
-router.get('/me', authenticate, getMyProfile); // Endpoint untuk profil sendiri
-router.put('/me', authenticate, updateMyProfile); // Endpoint untuk update profil sendiri
+// Rute untuk pengguna yang terotentikasi (mengelola profil sendiri)
+router.get('/me', authenticate, getMyProfile);
+router.put('/me', authenticate, updateMyProfile);
 
-router.get('/:id', authenticate, getUserById); // Endpoint untuk layanan lain/admin
-router.get('/', authenticate, getAllUsers); // Endpoint untuk admin
+// Rute khusus Admin untuk mengelola semua pengguna
+router.get('/', authenticate, authorize(['admin']), getAllUsers);
+router.post('/', authenticate, authorize(['admin']), createUser); // Menambah pengguna baru
+router.get('/:id', authenticate, authorize(['admin']), getUserById); // Mendapatkan user spesifik
+router.delete('/:id', authenticate, authorize(['admin']), deleteUser); // Menghapus user
+
 export default router;

@@ -1,4 +1,3 @@
-// services/5-admin-service/src/controllers/setting.controller.ts
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 

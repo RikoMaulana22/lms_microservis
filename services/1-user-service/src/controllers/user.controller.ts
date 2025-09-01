@@ -2,6 +2,7 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from 'shared/middlewares/auth.middleware';
+import bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 // Fungsi untuk mendapatkan detail user berdasarkan ID
@@ -78,5 +79,29 @@ export const updateMyProfile = async (req: AuthRequest, res: Response): Promise<
         res.status(200).json(updatedUser);
     } catch (error) {
         res.status(500).json({ message: 'Gagal memperbarui profil' });
+    }
+};
+
+export const createUser = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { username, password, fullName, email, role, nisn } = req.body;
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const newUser = await prisma.user.create({
+            data: { username, password: hashedPassword, fullName, email, role, nisn },
+            select: { id: true, fullName: true, username: true, email: true, role: true, nisn: true }
+        });
+        res.status(201).json(newUser);
+    } catch (error) {
+        res.status(500).json({ message: 'Gagal membuat pengguna baru.' });
+    }
+};
+
+// Untuk admin menghapus pengguna
+export const deleteUser = async (req: Request, res: Response): Promise<void> => {
+    try {
+        await prisma.user.delete({ where: { id: Number(req.params.id) } });
+        res.status(204).send(); // No content
+    } catch (error) {
+        res.status(500).json({ message: 'Gagal menghapus pengguna.' });
     }
 };
