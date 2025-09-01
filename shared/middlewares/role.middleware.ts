@@ -1,5 +1,5 @@
 import {Request, Response, NextFunction } from 'express';
-import { AuthRequest } from './auth.middleware';
+import { AuthRequest, TokenPayload } from './auth.middleware';
 type Role = 'guru' | 'siswa' | 'admin' | 'wali_kelas';
 
 export const checkRole = (roles: Role | Role[]) => {

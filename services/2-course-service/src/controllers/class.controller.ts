@@ -1,7 +1,11 @@
 // Path: server/src/controllers/class.controller.ts
 import { Request, Response, NextFunction } from 'express';
 import { PrismaClient, Prisma } from '@prisma/client';
-import { AuthRequest } from '../middlewares/auth.middleware';
+import { AuthRequest } from 'shared/middlewares/auth.middleware';
+import axios from 'axios';
+
+const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://localhost:4001/api';
+const GRADING_SERVICE_URL = process.env.GRADING_SERVICE_URL || 'http://localhost:4003/api';
 
 const prisma = new PrismaClient();
 
@@ -77,76 +81,63 @@ export const getClassById = async (req: AuthRequest, res: Response): Promise<voi
         const { id } = req.params;
         const userId = req.user?.userId;
 
+        // 1. Ambil data inti dari database Course Service
         const classData = await prisma.class.findUnique({
             where: { id: Number(id) },
-            // Query ini sudah benar, tidak perlu diubah
             include: {
                 subject: true,
-                teacher: { 
-                    select: { 
-                        id: true, 
-                        fullName: true 
-                    } 
-                },
-                members: {
-                    where: { studentId: userId },
-                    select: { studentId: true }
-                },
-                topics: {
-                    orderBy: { order: 'asc' },
-                    include: {
-                        materials: { orderBy: { createdAt: 'asc' } },
-                        assignments: {
-                            orderBy: { createdAt: 'asc' },
-                            include: {
-                                submissions: {
-                                    where: { studentId: userId }
-                                }
-                            }
-                        },
-                        attendance: true
-                    }
-                },
+                topics: { orderBy: { order: 'asc' } },
+                members: { where: { studentId: userId } }, // Hanya cek untuk user saat ini
             },
         });
 
         if (!classData) {
-            res.status(404).json({ message: 'Kelas tidak ditemukan.' });
+            res.status(404).json({ message: "Kelas tidak ditemukan" });
             return;
         }
         
-        // --- PERBAIKAN DIMULAI DI SINI ---
-        // Logika untuk memproses data pengerjaan siswa
+        // Simpan token untuk meneruskan autentikasi
+        const authToken = req.headers['authorization'];
+
+        // 2. Panggil API ke layanan lain secara paralel untuk efisiensi
+        const [teacherResponse, progressResponse] = await Promise.all([
+            // Panggil User Service untuk data guru
+            axios.get(`${USER_SERVICE_URL}/users/${classData.teacherId}`, {
+                 headers: { Authorization: authToken }
+            }),
+
+            // Panggil Grading Service untuk data tugas dan progres siswa
+            axios.get(`${GRADING_SERVICE_URL}/progress/by-topics`, {
+                params: { topicIds: classData.topics.map(t => t.id).join(',') },
+                headers: { Authorization: authToken }
+            })
+        ]);
+
+        const teacherData = teacherResponse.data;
+        const assignmentsWithProgress = progressResponse.data;
+
+        // 3. Gabungkan semua data
         const processedTopics = classData.topics.map(topic => {
-            const processedAssignments = topic.assignments.map(assignment => {
-                // Ambil submissions dari hasil query (tipenya any karena tidak ada di model include awal)
-                const submissions = (assignment as any).submissions || [];
-                
-                // Buat objek studentProgress yang bersih
-                const studentProgress = {
-                    attemptCount: submissions.length,
-                    highestScore: submissions.length > 0
-                        ? Math.max(...submissions.map((sub: { score: number | null }) => sub.score || 0))
-                        : null
-                };
-
-                // Hapus properti submissions mentah agar tidak dikirim ke frontend
-                delete (assignment as any).submissions;
-
-                // Kembalikan assignment dengan properti studentProgress yang baru
-                return { ...assignment, studentProgress };
-            });
-
-            // Kembalikan topik dengan data assignment yang sudah diproses
-            return { ...topic, assignments: processedAssignments };
+            // Cocokkan tugas yang diterima dari grading-service dengan topiknya
+            const assignmentsForTopic = assignmentsWithProgress.filter(
+                (assignment: any) => assignment.topicId === topic.id
+            );
+            return { ...topic, assignments: assignmentsForTopic };
         });
-        
-        const isEnrolled = classData.members.length > 0 || classData.teacher.id === userId;
-        const { members, ...responseData } = classData;
 
-        // Kirim data yang sudah diproses sepenuhnya ke frontend
-        res.status(200).json({ ...responseData, topics: processedTopics, isEnrolled });
-        // --- AKHIR PERBAIKAN ---
+        // 4. Tentukan status pendaftaran (enrollment)
+        const isEnrolled = classData.members.length > 0 || classData.teacherId === userId;
+
+        // 5. Buat objek respons akhir
+        const { members, ...classInfo } = classData;
+        const responseData = {
+            ...classInfo,
+            topics: processedTopics,
+            teacher: teacherData,
+            isEnrolled,
+        };
+
+        res.status(200).json(responseData);
 
     } catch (error) {
         console.error("Gagal mengambil detail kelas:", error);
@@ -240,58 +231,33 @@ export const getAllClasses = async (req: AuthRequest, res: Response): Promise<vo
 // GANTIKAN FUNGSI LAMA DENGAN VERSI BARU INI
 export const getStudentClasses = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-        const studentId = req.user?.userId;
+        const studentId = req.user?.userId; // Gunakan ID siswa dari token
+
         if (!studentId) {
-            res.status(401).json({ message: 'Otentikasi siswa diperlukan.' });
+            res.status(403).json({ message: "User tidak terautentikasi." });
             return;
         }
 
-        const memberships = await prisma.class_Members.findMany({
+        const classes = await prisma.class.findMany({
             where: {
-                studentId: studentId,
-            },
-            select: {
-                classId: true,
-            },
-        });
-
-        const enrolledClassIds = memberships.map(member => member.classId);
-
-        if (enrolledClassIds.length === 0) {
-            res.status(200).json([]);
-            return;
-        }
-
-        const enrolledClasses = await prisma.class.findMany({
-            where: {
-                id: {
-                    in: enrolledClassIds,
+                members: {      // Cari di dalam tabel relasi Class_Members
+                    some: {
+                        studentId: studentId,
+                    },
                 },
             },
-             select: { // <-- Ubah dari include menjadi select
-                id: true,
-                name: true,
-                imageUrl: true, // <-- TAMBAHKAN INI
-                subject: {
-                    select: { name: true }
-                },
-                teacher: {
-                    select: { fullName: true }
-                },
+            include: {
+                subject: true,
                 _count: {
-                    select: { members: true }
-                }
+                    select: { members: true },
+                },
             },
-            orderBy: {
-                name: 'asc'
-            }
         });
 
-        res.status(200).json(enrolledClasses);
-
+        res.status(200).json(classes);
     } catch (error) {
-        console.error("Gagal mengambil data kelas siswa:", error);
-        res.status(500).json({ message: 'Terjadi kesalahan pada server saat mengambil data kelas.' });
+        console.error("Gagal mengambil kelas siswa:", error);
+        res.status(500).json({ message: "Terjadi kesalahan pada server." });
     }
 };
 

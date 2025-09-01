@@ -4,7 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import assignmentRoutes from './routes/assignment.routes';
 import submissionRoutes from './routes/submission.routes';
-
+import progressRoutes from './routes/progress.routes';
 dotenv.config();
 
 const app = express();
@@ -20,7 +20,7 @@ app.get('/', (req, res) => {
 // Daftarkan rute
 app.use('/api/assignments', assignmentRoutes);
 app.use('/api/submissions', submissionRoutes);
-
+app.use('/api/progress', progressRoutes);
 app.listen(PORT, () => {
   console.log(`🚀 Grading Service running on http://localhost:${PORT}`);
 });

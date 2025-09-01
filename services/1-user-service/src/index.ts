@@ -3,7 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.routes';
-// Tambahkan rute lain jika ada, misalnya userRoutes
+import userRoutes from './routes/user.routes'; // <<< TAMBAHKAN INI
 
 dotenv.config();
 
@@ -19,6 +19,7 @@ app.get('/', (req, res) => {
 
 // Daftarkan rute
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes); 
 
 app.listen(PORT, () => {
   console.log(`🚀 User Service running on http://localhost:${PORT}`);
