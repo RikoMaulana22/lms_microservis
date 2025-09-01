@@ -7,6 +7,7 @@ import { Request } from 'express';
 
 // Tentukan direktori penyimpanan
 const storageDir = 'public/uploads/materials';
+type FileFilterCallback = (error: Error | null, acceptFile: boolean) => void;
 
 // Pastikan direktori ada, jika tidak, buat direktorinya
 if (!fs.existsSync(storageDir)) {
@@ -57,4 +58,32 @@ export const upload = multer({
     limits: {
         fileSize: 10 * 1024 * 1024 // Batas ukuran file 10MB
     }
+});
+
+const createStorage = (destination: string) => {
+  return multer.diskStorage({
+    destination: (req, file, cb) => {
+      // Pastikan direktori tujuan ada, jika tidak, buat
+      const fullPath = path.join('public', destination);
+      fs.mkdirSync(fullPath, { recursive: true });
+      cb(null, fullPath);
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    },
+  });
+};
+
+// Konfigurasi upload yang bisa disesuaikan
+export const uploadImage = (destination: string = 'images') => multer({
+  storage: createStorage(destination),
+  limits: { fileSize: 1024 * 1024 * 5 }, // 5 MB
+  fileFilter: fileFilter(/image\/(jpeg|png|gif|jpg)/),
+});
+
+export const uploadFile = (destination: string = 'files') => multer({
+  storage: createStorage(destination),
+  limits: { fileSize: 1024 * 1024 * 10 }, // 10 MB
+  fileFilter: fileFilter(/application\/(pdf|msword|vnd.openxmlformats-officedocument.wordprocessingml.document)/),
 });
