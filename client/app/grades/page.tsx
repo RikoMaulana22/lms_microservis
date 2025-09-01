@@ -39,7 +39,7 @@ export default function GradesPage() {
   useEffect(() => {
     const fetchAndGroupGrades = async () => {
       try {
-        const response = await assignmentApiClient.get(`/my-grades`);
+        const response = await assignmentApiClient.get(`../submissions/my-submissions`);
         const grades: Grade[] = response.data;
 
         // --- PERUBAHAN 2: Pengelompokan Data ---

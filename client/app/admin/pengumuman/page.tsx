@@ -1,14 +1,20 @@
+// Path: client/app/admin/pengumuman/page.tsx
 'use client';
 
 import { useState, useEffect, useCallback, FormEvent } from 'react';
+// ✅ BENAR: API client ini sudah benar
 import announcementApiClient from '@/lib/axiosAnnouncement';
-import { FaTrash, FaBullhorn } from 'react-icons/fa';
+import toast from 'react-hot-toast'; // ✅ TAMBAHAN: Impor toast
+import { FaTrash } from 'react-icons/fa';
 
 interface Announcement {
     id: number;
     title: string;
     content: string;
     createdAt: string;
+    author: { // Asumsikan ada relasi author
+        fullName: string;
+    }
 }
 
 export default function ManageAnnouncementsPage() {
@@ -23,9 +29,12 @@ export default function ManageAnnouncementsPage() {
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const response = await announcementApiClient.get(`/announcements`); // Panggil endpoint admin
+            // ✅ PERBAIKAN: Endpoint untuk GET semua pengumuman adalah '/'
+            // baseURL '/api/announcements' + '/' -> '/api/announcements'
+            const response = await announcementApiClient.get(`/`);
             setAnnouncements(response.data);
         } catch (error) {
+            toast.error("Gagal memuat data pengumuman.");
             console.error("Gagal mengambil data:", error);
         } finally {
             setIsLoading(false);
@@ -39,14 +48,16 @@ export default function ManageAnnouncementsPage() {
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
+        const toastId = toast.loading('Mengirim pengumuman...');
         try {
-            await announcementApiClient.post('/announcements', { title, content });
-            alert('Pengumuman berhasil dibuat!');
+            // ✅ PERBAIKAN: Endpoint untuk POST pengumuman adalah '/'
+            await announcementApiClient.post('/', { title, content });
+            toast.success('Pengumuman berhasil dibuat!', { id: toastId });
             setTitle('');
             setContent('');
             fetchData();
-        } catch (error) {
-            alert('Gagal membuat pengumuman.');
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Gagal membuat pengumuman.', { id: toastId });
         } finally {
             setIsSubmitting(false);
         }
@@ -54,12 +65,14 @@ export default function ManageAnnouncementsPage() {
 
     const handleDelete = async (id: number) => {
         if (window.confirm('Yakin ingin menghapus pengumuman ini?')) {
+            const toastId = toast.loading('Menghapus pengumuman...');
             try {
-                await announcementApiClient.delete(`/announcements/${id}`);
-                alert('Pengumuman berhasil dihapus.');
+                // ✅ PERBAIKAN: Endpoint untuk DELETE adalah '/:id'
+                await announcementApiClient.delete(`/${id}`);
+                toast.success('Pengumuman berhasil dihapus.', { id: toastId });
                 fetchData();
-            } catch (error) {
-                alert('Gagal menghapus pengumuman.');
+            } catch (error: any) {
+                toast.error(error.response?.data?.message || 'Gagal menghapus pengumuman.', { id: toastId });
             }
         }
     };
@@ -73,14 +86,14 @@ export default function ManageAnnouncementsPage() {
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium border-gray-500">Judul</label>
-                            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required className="form-input w-full mt-1" />
+                            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required className="form-input px-4 py-3 w-full mt-1 border border-gray-600 text-gray-700 rounded-md" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium border-gray-500">Isi Pengumuman</label>
-                            <textarea value={content} onChange={(e) => setContent(e.target.value)} required rows={8} className="form-textarea w-full mt-1"></textarea>
+                            <textarea value={content} onChange={(e) => setContent(e.target.value)} required rows={8} className="form-textarea px-4 py-3 w-full mt-1 border border-gray-600 text-gray-700 rounded-md"></textarea>
                         </div>
                         <div className="text-right">
-                            <button type="submit" disabled={isSubmitting} className="w-full px-6 py-2 bg-blue-600 border-gray-500 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:bg-blue-300">
+                            <button type="submit" disabled={isSubmitting} className="btn-primary w-full">
                                 {isSubmitting ? 'Mengirim...' : 'Kirim Pengumuman'}
                             </button>
                         </div>

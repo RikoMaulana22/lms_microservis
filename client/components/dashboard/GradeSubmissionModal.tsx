@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, FormEvent, useEffect } from 'react';
-import apiClient from '@/lib/axiosAdmin';
+import assignmentApiClient from '@/lib/axiosAssignment';
 import Modal from '@/components/ui/Modal';
 import { Submission } from '@/types';
 import toast from 'react-hot-toast'; // <-- 1. IMPORT toast
@@ -38,7 +38,7 @@ export default function GradeSubmissionModal({ isOpen, onClose, submission, onGr
 
     setIsLoading(true);
     try {
-      await apiClient.put(`/submissions/${submission.id}/grade`, {
+      await assignmentApiClient.put(`../submissions/${submission.id}/grade`, {
         score: numericScore
       });
       // --- 3. GANTI alert DENGAN toast.success ---

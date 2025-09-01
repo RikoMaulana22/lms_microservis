@@ -1,0 +1,43 @@
+// services/5-admin-service/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL") // DATABASE_URL untuk Admin Service
+}
+
+enum NoteType {
+  PELANGGARAN
+  PRESTASI
+  BIMBINGAN_KONSELING
+  CATATAN_ORANG_TUA
+}
+
+enum LetterType {
+  IZIN_SAKIT
+  IZIN_ACARA
+  PANGGILAN_ORANG_TUA
+}
+
+model StudentNote {
+  id        Int      @id @default(autoincrement())
+  type      NoteType
+  content   String   @db.Text
+  date      DateTime @default(now())
+  studentId Int      // ID dari User Service
+  classId   Int      // ID dari Course Service
+  authorId  Int      // ID dari User Service
+}
+
+model Letter {
+  id        Int        @id @default(autoincrement())
+  type      LetterType
+  date      DateTime   @default(now())
+  content   String     @db.Text
+  status    String
+  studentId Int?       // ID dari User Service
+  classId   Int        // ID dari Course Service
+}

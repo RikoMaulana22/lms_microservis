@@ -1,0 +1,44 @@
+// services/1-user-service/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL") // DATABASE_URL untuk User Service
+}
+
+enum Role {
+  guru
+  siswa
+  admin
+  wali_kelas
+}
+
+model Setting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  fullName  String
+  email     String   @unique
+  role      Role
+  nisn      String?  @unique
+  createdAt DateTime @default(now())
+}
+
+model Announcement {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String   @db.Text
+  authorId  Int      // Menyimpan ID pengguna dari model User
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

@@ -57,7 +57,7 @@ export default function ClassDetailPage() {
     const params = useParams();
     const { id } = params;
     const { user } = useAuth();
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    const backendUrl = process.env.NEXT_PUBLIC_CLASS_CONTENT_SERVICE_URL;
 
     // State for data and UI
     const [classData, setClassData] = useState<ClassDetails | null>(null);
@@ -87,7 +87,7 @@ export default function ClassDetailPage() {
             if (classData === null) setIsLoading(true);
             setError(null);
             try {
-                const response = await classContentApiClient.get(`/classes/${params.id}`);
+                const response = await classContentApiClient.get(`/${id}`);
                 setClassData(response.data);
             } catch (err) {
                 setError('Gagal memuat data kelas.');
@@ -121,7 +121,7 @@ export default function ClassDetailPage() {
     const handleDeleteTopic = async (topicId: number) => {
         if (window.confirm('Apakah Anda yakin ingin menghapus topik ini?')) {
             try {
-                await classContentApiClient.delete(`/topics/${topicId}`);
+                await classContentApiClient.delete(`../topics/${topicId}`);
                 toast.success('Topik berhasil dihapus.');
                 fetchData();
             } catch (error) {

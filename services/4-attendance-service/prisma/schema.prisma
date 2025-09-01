@@ -1,0 +1,72 @@
+// services/4-attendance-service/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL") // DATABASE_URL untuk Attendance Service
+}
+
+enum DailyAttendanceStatus {
+  HADIR
+  SAKIT
+  IZIN
+  ALPA
+}
+
+enum DayOfWeek {
+  SENIN
+  SELASA
+  RABU
+  KAMIS
+  JUMAT
+  SABTU
+  MINGGU
+}
+
+model Schedule {
+  id        Int       @id @default(autoincrement())
+  dayOfWeek DayOfWeek
+  startTime String
+  endTime   String
+  classId   Int       // ID dari Course Service
+  subjectId Int       // ID dari Course Service
+  teacherId Int       // ID dari User Service
+}
+
+model Attendance {
+  id        Int                @id @default(autoincrement())
+  title     String
+  openTime  DateTime
+  closeTime DateTime
+  topicId   Int                @unique // ID dari Course Service
+  records   AttendanceRecord[]
+}
+
+model DailyAttendance {
+  id           Int                 @id @default(autoincrement())
+  date         DateTime            @db.Date
+  status       DailyAttendanceStatus
+  notes        String?
+  studentId    Int                 // ID dari User Service
+  classId      Int                 // ID dari Course Service
+  recordedById Int                 // ID dari User Service (wali kelas/admin)
+  proofUrl     String?
+
+  @@unique([date, studentId, classId])
+}
+
+model AttendanceRecord {
+  id           Int                   @id @default(autoincrement())
+  timestamp    DateTime              @default(now())
+  notes        String?
+  status       DailyAttendanceStatus
+  proofUrl     String?
+  studentId    Int                   // ID dari User Service
+  attendanceId Int
+  attendance   Attendance            @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, attendanceId])
+}

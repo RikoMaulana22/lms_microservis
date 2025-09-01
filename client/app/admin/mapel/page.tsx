@@ -1,7 +1,9 @@
+// Path: client/app/admin/mapel/page.tsx
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import adminApiClient from '@/lib/axiosAdmin';
+// ✅ PERBAIKAN: Ganti adminApiClient dengan classContentApiClient
+import classContentApiClient from '@/lib/axiosClassContent';
 import toast from 'react-hot-toast';
 import AddSubjectModal from '@/components/dashboard/admin/AddSubjectModal';
 import EditSubjectModal from '@/components/dashboard/admin/EditSubjectModal';
@@ -15,22 +17,20 @@ interface Subject {
 export default function ManageSubjectsPage() {
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-
-    // State untuk kontrol modal
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
-
-    // 1. State baru untuk menampung nilai filter
     const [selectedGrade, setSelectedGrade] = useState<string>('');
 
-    // 2. Modifikasi fetchData untuk menangani filter
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
-            // Tambahkan parameter 'grade' ke request jika filter dipilih
-            const url = selectedGrade ? `/subjects?grade=${selectedGrade}` : `/subjects`;
-            const response = await adminApiClient.get(url);
+            // ✅ PERBAIKAN: Gunakan client yang benar dan sesuaikan endpoint
+            // baseURL '/api/classes' + '../subjects' -> '/api/subjects'
+            // Tambahkan query parameter 'grade' jika ada
+            const response = await classContentApiClient.get('/subjects', {
+                params: selectedGrade ? { grade: selectedGrade } : {}
+            });
             setSubjects(response.data);
         } catch (error) {
             console.error("Gagal mengambil data mapel:", error);
@@ -38,11 +38,11 @@ export default function ManageSubjectsPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [selectedGrade]); // fetchData akan dibuat ulang jika selectedGrade berubah
+    }, [selectedGrade]);
 
     useEffect(() => {
         fetchData();
-    }, [fetchData]); // useEffect akan berjalan saat pertama kali & saat fetchData berubah
+    }, [fetchData]);
 
     const handleEdit = (subject: Subject) => {
         setSelectedSubject(subject);
@@ -53,8 +53,9 @@ export default function ManageSubjectsPage() {
         if (window.confirm('Apakah Anda yakin ingin menghapus mata pelajaran ini? Ini mungkin akan gagal jika masih ada kelas yang menggunakan mapel ini.')) {
             const loadingToast = toast.loading('Menghapus...');
             try {
-                const response = await adminApiClient.delete(`/subjects/${subjectId}`);
-                toast.success(response.data.message, { id: loadingToast });
+                // ✅ PERBAIKAN: Gunakan client yang benar dan sesuaikan endpoint
+                await classContentApiClient.delete(`/subjects/${subjectId}`);
+                toast.success('Mata pelajaran berhasil dihapus!', { id: loadingToast });
                 fetchData();
             } catch (error: any) {
                 toast.error(error.response?.data?.message || 'Gagal menghapus mapel.', { id: loadingToast });
@@ -79,12 +80,11 @@ export default function ManageSubjectsPage() {
             <div className="container mx-auto p-4 md:p-8 ">
                 <div className="flex justify-between items-center mb-6">
                     <h1 className="text-3xl font-bold text-gray-800">Manajemen Mata Pelajaran</h1>
-                    <button onClick={() => setIsAddModalOpen(true)} className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700">
+                    <button onClick={() => setIsAddModalOpen(true)} className="btn-primary">
                         + Tambah Mapel
                     </button>
                 </div>
 
-                {/* 3. Tambahkan UI untuk filter */}
                 <div className="mb-4 flex justify-end text-gray-800">
                     <div className="w-full md:w-1/4">
                         <label className="block text-sm font-medium mb-1">Filter Berdasarkan Kelas</label>

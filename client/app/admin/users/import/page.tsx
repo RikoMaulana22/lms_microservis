@@ -3,6 +3,8 @@
 import { useState, ChangeEvent, FormEvent } from 'react';
 import adminApiClient from '@/lib/axiosAdmin';
 import toast from 'react-hot-toast';
+import Link from 'next/link';
+
 
 export default function BulkImportPage() {
     const [file, setFile] = useState<File | null>(null);
@@ -43,6 +45,9 @@ export default function BulkImportPage() {
 
     return (
         <div className="container mx-auto text-gray-800 p-4 md:p-8">
+             <Link href="/admin/pengguna" className="btn-secondary mb-6 inline-block">
+                    &larr; Kembali ke Dashboard
+                </Link>
             <h1 className="text-3xl font-bold">Impor Pengguna Massal</h1>
             <p className="text-gray-600 mb-6">Buat banyak akun sekaligus dengan mengunggah file CSV.</p>
 

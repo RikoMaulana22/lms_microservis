@@ -62,7 +62,7 @@ export default function AssignmentPage() {
     if (!assignmentId) return;
     setIsLoading(true);
     try {
-      const response = await assignmentApiClient.get(`/assignments/${assignmentId}`);
+      const response = await assignmentApiClient.get(`/${assignmentId}`);
       setAssignment(response.data);
       setStartTime(new Date());
     } catch (err) {
@@ -105,7 +105,7 @@ export default function AssignmentPage() {
       const payload = {
         startedOn: startTime.toISOString(),
         timeTakenMs: timeTakenMs,
-        ...(assignment.type === 'esai' ? { essayAnswer } : { answers })
+        ...(assignment.type === 'esai' ? { essayAnswer: combinedEssayAnswer } : { answers })
       };
 
       try {
@@ -145,7 +145,7 @@ export default function AssignmentPage() {
 
   return (
     <div className="container mx-auto p-4 md:p-8 text-gray-700">
-      <Link href="/kelas/1" className="inline-flex items-center gap-2 text-gray-600 hover:text-blue-700 font-medium transition-colors mb-4">
+            <Link href={`/kelas/${assignment.topic.class.id}`} className="inline-flex items-center gap-2 text-gray-600 hover:text-blue-700 font-medium transition-colors mb-4">
         <FaArrowLeft />
         <span>Kembali ke Kelas</span>
       </Link>

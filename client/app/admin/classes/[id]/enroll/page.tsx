@@ -7,39 +7,30 @@ import toast from 'react-hot-toast';
 import Link from 'next/link';
 import { FaArrowLeft } from 'react-icons/fa';
 
-//=========================================================
-// 1. Tipe Data (Interface) yang Sudah Diperbaiki
-//=========================================================
+// Tipe data sudah benar
 interface Student {
     id: number;
     fullName: string;
     nisn?: string;
 }
-
 interface Teacher {
     id: number;
     fullName: string;
 }
-
 interface EnrolledMember {
     user: Student;
 }
-
-// Tipe EnrollmentData yang digabung menjadi satu
 interface EnrollmentData {
     classDetails: {
         id: number;
         name: string;
         members: EnrolledMember[];
-        homeroomTeacher: Teacher | null; // Wali kelas bisa null
+        homeroomTeacher: Teacher | null;
     };
     availableStudents: Student[];
     availableTeachers: Teacher[];
 }
 
-//=========================================================
-// Komponen React
-//=========================================================
 export default function EnrollManagementPage() {
     const params = useParams();
     const classId = params.id;
@@ -50,10 +41,9 @@ export default function EnrollManagementPage() {
     const [selectedStudentId, setSelectedStudentId] = useState<string>('');
     const [selectedTeacherId, setSelectedTeacherId] = useState<string>('');
 
-    // Fungsi untuk mengambil semua data dari server
+    // Fungsi fetch data sudah benar
     const fetchData = useCallback(async () => {
         if (!classId) return;
-        // Set loading hanya pada fetch pertama
         if (!data) setIsLoading(true);
         try {
             const response = await adminApiClient.get(`/classes/${classId}/enrollments`);
@@ -67,8 +57,8 @@ export default function EnrollManagementPage() {
 
     useEffect(() => {
         fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [classId]); // Dijalankan hanya ketika classId berubah
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [classId]);
 
     // Handler untuk mendaftarkan siswa
     const handleEnroll = async () => {
@@ -77,22 +67,25 @@ export default function EnrollManagementPage() {
             return;
         }
         try {
-            await adminApiClient.post(`/classes/${classId}/enrollments`, { studentId: selectedStudentId });
+            // ✅ PERBAIKAN: Kirim studentId sebagai angka (integer)
+            await adminApiClient.post(`/classes/${classId}/enrollments`, {
+                studentId: parseInt(selectedStudentId, 10)
+            });
             toast.success("Siswa berhasil didaftarkan!");
             setSelectedStudentId('');
-            fetchData(); // Muat ulang data
+            fetchData();
         } catch (error: any) {
             toast.error(error.response?.data?.message || "Gagal mendaftarkan siswa.");
         }
     };
 
-    // Handler untuk mengeluarkan siswa
+    // Handler untuk mengeluarkan siswa (sudah benar)
     const handleUnenroll = async (studentId: number) => {
         if (window.confirm("Apakah Anda yakin ingin mengeluarkan siswa ini dari kelas?")) {
             try {
                 await adminApiClient.delete(`/classes/${classId}/enrollments/${studentId}`);
                 toast.success("Siswa berhasil dikeluarkan!");
-                fetchData(); // Muat ulang data
+                fetchData();
             } catch (error: any) {
                 toast.error(error.response?.data?.message || "Gagal mengeluarkan siswa.");
             }
@@ -106,9 +99,12 @@ export default function EnrollManagementPage() {
             return;
         }
         try {
-            await adminApiClient.put(`/classes/${classId}/homeroom`, { teacherId: selectedTeacherId });
+            // ✅ PERBAIKAN: Kirim teacherId sebagai angka (integer)
+            await adminApiClient.put(`/classes/${classId}/homeroom`, {
+                teacherId: parseInt(selectedTeacherId, 10)
+            });
             toast.success("Wali kelas berhasil ditetapkan!");
-            fetchData(); // Muat ulang data untuk menampilkan wali kelas baru
+            fetchData();
         } catch (error: any) {
             toast.error(error.response?.data?.message || "Gagal menetapkan wali kelas.");
         }

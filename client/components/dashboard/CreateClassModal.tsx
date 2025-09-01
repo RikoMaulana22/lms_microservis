@@ -4,6 +4,7 @@
 
 import { useState, useEffect, FormEvent, useMemo } from 'react';
 import adminApiClient from '@/lib/axiosAdmin';
+import classContentApiClient from '@/lib/axiosClassContent';
 import { Subject, User } from '@/types';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
@@ -42,9 +43,10 @@ export default function CreateClassModal({ isOpen, onClose, onClassCreated }: Cr
 
       const fetchPrerequisites = async () => {
         try {
-          const subjectsPromise = adminApiClient.get('/subjects');
-          const teachersPromise = adminApiClient.get('/teachers');
-          const [subjectsRes, teachersRes] = await Promise.all([subjectsPromise, teachersPromise]);
+          const [subjectsRes, teachersRes] = await Promise.all([
+            classContentApiClient.get('../subjects'), // Ambil mapel dari class-content-service
+            adminApiClient.get('/teachers') // Ambil guru dari admin-service
+          ]);
           setAllSubjects(subjectsRes.data);
           setTeachers(teachersRes.data);
         } catch (error) {
@@ -90,10 +92,8 @@ export default function CreateClassModal({ isOpen, onClose, onClassCreated }: Cr
     }
 
     try {
-      await adminApiClient.post('/classes', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+       await classContentApiClient.post('/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
       toast.success('Kelas berhasil dibuat!', { id: toastId });
       onClassCreated();
@@ -109,20 +109,21 @@ export default function CreateClassModal({ isOpen, onClose, onClassCreated }: Cr
   if (!isOpen) return null;
 
   return (
+    
     // ✅ PERUBAHAN 1: Tambahkan prop size="fullscreen"
     <Modal isOpen={isOpen} onClose={onClose} title="BUAT KELAS BARU" isFullScreen>
       {/* ✅ PERUBAHAN 2: Tambahkan div wrapper untuk membatasi lebar form agar rapi */}
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-2xl mx-auto mt-4">
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
           
           {/* ... semua elemen form Anda di sini ... */}
           <div className="mb-4">
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700">Nama Kelas</label>
+            <label htmlFor="name" className="block text-sm font-bold text-gray-700  ">Nama Kelas</label>
             <input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)} required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" placeholder="Contoh: Matematika Kelas 7A" />
           </div>
           <div className="mb-4">
-            <label htmlFor="grade" className="block text-sm font-medium text-gray-700">Tingkat Kelas</label>
+            <label htmlFor="grade" className="block text-sm font-bold text-gray-700">Tingkat Kelas</label>
             <select id="grade" value={selectedGrade} onChange={handleGradeChange} required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
               <option value="" disabled>Pilih Tingkatan Kelas</option>
               <option value="7">Kelas 7</option>
@@ -131,7 +132,7 @@ export default function CreateClassModal({ isOpen, onClose, onClassCreated }: Cr
             </select>
           </div>
           <div className="mb-4">
-            <label htmlFor="subject" className="block text-sm font-medium text-gray-700">Mata Pelajaran</label>
+            <label htmlFor="subject" className="block text-sm font-bold text-gray-700">Mata Pelajaran</label>
             <select id="subject" value={subjectId} onChange={(e) => setSubjectId(e.target.value)} required disabled={!selectedGrade} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm disabled:bg-gray-100">
               <option value="" disabled>Pilih Mata Pelajaran</option>
               {filteredSubjects.map((subject) => (
@@ -140,7 +141,7 @@ export default function CreateClassModal({ isOpen, onClose, onClassCreated }: Cr
             </select>
           </div>
           <div className="mb-4">
-            <label htmlFor="teacher" className="block text-sm font-medium text-gray-700">Guru Pengajar</label>
+            <label htmlFor="teacher" className="block text-sm font-bold text-gray-700">Guru Pengajar</label>
             <select id="teacher" value={teacherId} onChange={(e) => setTeacherId(e.target.value)} required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
               <option value="" disabled>Pilih Guru Pengajar</option>
               {teachers.map((teacher) => (
@@ -151,11 +152,11 @@ export default function CreateClassModal({ isOpen, onClose, onClassCreated }: Cr
             </select>
           </div>
           <div className="mb-4">
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700">Deskripsi (Opsional)</label>
+            <label htmlFor="description" className="block text-sm font-bold text-gray-700">Deskripsi (Opsional)</label>
             <textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
           </div>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">Gambar Sampul Kelas (Opsional)</label>
+            <label className="block text-sm font-bold text-gray-700">Gambar Sampul Kelas (Opsional)</label>
             <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
               <div className="space-y-1 text-center">
                 {imagePreview ? (
@@ -164,7 +165,7 @@ export default function CreateClassModal({ isOpen, onClose, onClassCreated }: Cr
                   <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 )}
                 <div className="flex text-sm text-gray-600">
-                  <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500">
+                  <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-bold text-blue-600 hover:text-blue-500">
                     <span>Unggah file</span>
                     <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={handleImageChange} accept="image/*" />
                   </label>
@@ -184,5 +185,6 @@ export default function CreateClassModal({ isOpen, onClose, onClassCreated }: Cr
         </form>
       </div>
     </Modal>
+    
   );
 }

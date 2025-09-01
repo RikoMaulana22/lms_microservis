@@ -1,18 +1,17 @@
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
+// DIUBAH: Impor juga classContentApiClient
 import adminApiClient from '@/lib/axiosAdmin';
+import classContentApiClient from '@/lib/axiosClassContent'; 
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
-
 import { Teacher, Subject, ClassInfo } from '@/types';
-
 
 interface EditClassModalProps {
     isOpen: boolean;
     onClose: () => void;
     onClassUpdated: () => void;
-    // 2. Gunakan tipe ClassInfo yang sudah diimpor
     classData: ClassInfo | null;
 }
 
@@ -22,7 +21,6 @@ export default function EditClassModal({ isOpen, onClose, onClassUpdated, classD
     const [subjectId, setSubjectId] = useState('');
     const [teacherId, setTeacherId] = useState('');
     const [homeroomTeacherId, setHomeroomTeacherId] = useState('');
-
     const [teachers, setTeachers] = useState<Teacher[]>([]);
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -31,27 +29,29 @@ export default function EditClassModal({ isOpen, onClose, onClassUpdated, classD
     useEffect(() => {
         if (isOpen && classData) {
             setIsDataLoaded(false);
-            const fetchPrerequisitesAndSetData = async () => {
+            const fetchAndSetData = async () => {
                 try {
+                    // DIUBAH: Menggunakan client yang benar untuk setiap data
                     const [teachersRes, subjectsRes] = await Promise.all([
-                        adminApiClient.get('/teachers'),
-                        adminApiClient.get('/subjects')
+                        adminApiClient.get('/teachers'), // Benar: Data guru dari admin-service
+                        classContentApiClient.get('../subjects') // Benar: Data mapel dari class-content-service
                     ]);
                     setTeachers(teachersRes.data);
                     setSubjects(subjectsRes.data);
 
+                    // Set data awal dari props
                     setName(classData.name);
                     setDescription(classData.description || '');
-                    setSubjectId(classData.subject.id.toString());
-                    setTeacherId(classData.teacher.id.toString());
+                    setSubjectId(classData.subject?.id.toString() || '');
+                    setTeacherId(classData.teacher?.id.toString() || '');
                     setHomeroomTeacherId(classData.homeroomTeacher?.id.toString() || '');
                     setIsDataLoaded(true);
                 } catch (error) {
-                    toast.error("Gagal memuat data form.");
+                    toast.error("Gagal memuat data untuk form edit.");
                     onClose();
                 }
             };
-            fetchPrerequisitesAndSetData();
+            fetchAndSetData();
         }
     }, [isOpen, classData, onClose]);
 
@@ -61,7 +61,15 @@ export default function EditClassModal({ isOpen, onClose, onClassUpdated, classD
         setIsLoading(true);
         const toastId = toast.loading("Memperbarui kelas...");
         try {
-            await adminApiClient.put(`/classes/${classData.id}`, { name, description, subjectId, teacherId });
+            // DIUBAH: Menggunakan client dan endpoint yang benar untuk update
+            await classContentApiClient.put(`/${classData.id}`, {
+                name,
+                description,
+                // Pastikan ID dikirim sebagai angka
+                subjectId: parseInt(subjectId, 10),
+                teacherId: parseInt(teacherId, 10),
+                homeroomTeacherId: parseInt(homeroomTeacherId, 10)
+            });
             toast.success("Kelas berhasil diperbarui!", { id: toastId });
             onClassUpdated();
             onClose();
@@ -90,7 +98,7 @@ export default function EditClassModal({ isOpen, onClose, onClassUpdated, classD
                         <label className="block text-sm font-medium">Mata Pelajaran</label>
                         <select value={subjectId} onChange={e => setSubjectId(e.target.value)} required className="form-select w-full mt-1">
                             <option value="">-- Pilih Mata Pelajaran --</option>
-                            {subjects.map(subject => <option key={subject.id} value={subject.id}>{subject.name}</option>)}
+                            {subjects.map(subject => <option key={subject.id} value={subject.id}>{subject.name} (Kelas {subject.grade})</option>)}
                         </select>
                     </div>
                     <div>
@@ -104,7 +112,6 @@ export default function EditClassModal({ isOpen, onClose, onClassUpdated, classD
                         <label className="block text-sm font-medium">Wali Kelas</label>
                         <select value={homeroomTeacherId} onChange={e => setHomeroomTeacherId(e.target.value)} required className="form-select w-full mt-1">
                             <option value="">-- Pilih Wali Kelas --</option>
-                            {/* The same list of teachers is used */}
                             {teachers.map(teacher => <option key={teacher.id} value={teacher.id}>{teacher.fullName}</option>)}
                         </select>
                     </div>

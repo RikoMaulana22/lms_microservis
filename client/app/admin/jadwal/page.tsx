@@ -2,27 +2,20 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-// Pastikan impornya benar
 import scheduleApiClient from '@/lib/axiosSchedule';
 import { FaTrash } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import AddScheduleModal from '@/components/dashboard/admin/AddScheduleModal';
 
-// Update interface untuk menerima data objek yang di-include
+// Interface sudah benar
 interface Schedule {
     id: number;
     dayOfWeek: string;
     startTime: string;
     endTime: string;
-    class: {
-        name: string;
-    };
-    subject: {
-        name: string;
-    };
-    teacher: {
-        fullName: string;
-    };
+    class: { name: string; };
+    subject: { name: string; };
+    teacher: { fullName: string; };
 }
 
 export default function ManageSchedulesPage() {
@@ -30,12 +23,11 @@ export default function ManageSchedulesPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    // Gunakan satu fungsi untuk mengambil data
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
-            // Perbaikan di sini, panggilan ke root path dari baseURL
-            const response = await scheduleApiClient.get('/schedules');
+            // ✅ PERBAIKAN: Panggil endpoint root ('/') dari baseURL
+            const response = await scheduleApiClient.get('/');
             setSchedules(response.data);
         } catch (error: any) {
             if (error.response?.status === 403) {
@@ -49,20 +41,18 @@ export default function ManageSchedulesPage() {
         }
     }, []);
 
-    // Panggil fungsi fetchData saat komponen pertama kali dimuat
     useEffect(() => {
         fetchData();
     }, [fetchData]);
 
-    // Fungsi ini dipanggil dari modal setelah jadwal berhasil ditambahkan
     const handleScheduleAdded = () => {
-        fetchData(); // Panggil fungsi utama untuk memuat data terbaru
-        setIsModalOpen(false); // Tutup modal
+        fetchData();
+        setIsModalOpen(false);
     };
 
+    // Fungsi handleDelete sudah benar
     const handleDelete = async (scheduleId: number) => {
         toast.promise(
-            // Perbaikan di sini, menggunakan template literal untuk jalur
             scheduleApiClient.delete(`/${scheduleId}`),
             {
                 loading: 'Menghapus jadwal...',
@@ -70,7 +60,7 @@ export default function ManageSchedulesPage() {
                 error: 'Gagal menghapus jadwal.'
             }
         ).then(() => {
-            fetchData(); // Perbarui data setelah penghapusan berhasil
+            fetchData();
         }).catch((error) => {
             console.error('Error deleting schedule:', error);
         });
@@ -88,7 +78,7 @@ export default function ManageSchedulesPage() {
                     <h1 className="text-3xl font-bold">Manajemen Jadwal Pelajaran</h1>
                     <button
                         onClick={() => setIsModalOpen(true)}
-                        className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700"
+                        className="btn-primary"
                     >
                         + Tambah Jadwal
                     </button>

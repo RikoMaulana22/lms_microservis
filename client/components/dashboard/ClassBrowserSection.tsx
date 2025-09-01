@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { FaChevronDown, FaChevronRight } from 'react-icons/fa';
 import { GroupedSubjects, Subject, ClassInfo, ClassSummary } from '@/types'; // <-- Tambahkan ClassSummary
 import classContentApiClient from '@/lib/axiosClassContent'; // <-- IMPORT BARU
+import toast from 'react-hot-toast';
 
 // Komponen Skeleton untuk accordion (tidak berubah)
 const AccordionSkeleton = () => (
@@ -40,11 +41,11 @@ const toggleSubject = (subjectId: number) => {
   const handleEnrol = async (classId: number) => {
     setEnrollingId(classId); // Menandai tombol mana yang diklik untuk loading
     try {
-      await classContentApiClient.post(`/classes/${classId}/enrol`);
-      alert('Pendaftaran berhasil!');
+      await classContentApiClient.post(`/${classId}/enroll`);
+      toast.success('Berhasil mendaftar ke kelas!');
       onEnrolSuccess(); // Memanggil fungsi refresh dari StudentDashboard
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Gagal mendaftar ke kelas.');
+      toast.error(error.response?.data?.message || 'Gagal mendaftar ke kelas.');
       console.error(error);
     } finally {
       setEnrollingId(null); // Selesaikan proses loading

@@ -1,6 +1,7 @@
+// Path: client/app/dashboard/wali-kelas/page.tsx
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, FormEvent } from 'react';
 import homeroomApiClient from '@/lib/axiosHomeroom';
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
@@ -8,23 +9,12 @@ import autoTable from 'jspdf-autotable';
 import ViewTranscriptModal from '@/components/dashboard/ViewTranscriptModal';
 import AttendanceDetailModal from '@/components/dashboard/AttendanceDetailModal';
 
-// Modal untuk detail absensi harian siswa
-interface AttendanceDetailModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    student: Student | null;
-    allAttendances: DailyAttendance[];
-}
-
-
-
-
-// Definisikan tipe data
+// Tipe data sudah benar
 interface Student { id: number; fullName: string; nisn: string; }
 interface Note { id: number; content: string; student: { fullName: string }; createdAt: string; }
-interface DailyAttendance { id: number; date: string; status: 'HADIR' | 'SAKIT' | 'IZIN' | 'ALPA'; }
-interface Grade { id: number; score: number; studentId: number; component: { name: string; subject: { name: string } }; }
-interface StudentDetails { grades: Grade[]; dailyAttendances: DailyAttendance[]; }
+interface DailyAttendance { id: number; date: string; status: 'HADIR' | 'SAKIT' | 'IZIN' | 'ALPA'; studentId: number; class: { subject: { name: string } } }
+interface Grade { id: number; score: number; component: { name: string; subject: { name: string } }; }
+interface StudentDetails { grades: Grade[]; dailyAttendances: Omit<DailyAttendance, 'class' | 'studentId'>[]; }
 interface GradeComponent { id: number; name: string; subject: { name: string }; grades: Grade[]; }
 interface EditStudentDataModalProps {
     student: Student | null;
@@ -41,7 +31,8 @@ const EditStudentDataModal = ({ student, onClose, onDataUpdated }: EditStudentDa
         if (!student) return;
         setIsLoading(true);
         try {
-            const res = await homeroomApiClient.get(`/homeroom/student/${student.id}`);
+            // ✅ PERBAIKAN: Gunakan endpoint yang benar
+            const res = await homeroomApiClient.get(`/student/${student.id}/details`);
             setDetails(res.data);
         } catch (error) {
             toast.error("Gagal memuat detail siswa.");
@@ -49,7 +40,7 @@ const EditStudentDataModal = ({ student, onClose, onDataUpdated }: EditStudentDa
         } finally {
             setIsLoading(false);
         }
-    }, [student]);
+    }, [student, onClose]);
 
     useEffect(() => { fetchDetails(); }, [fetchDetails]);
 
@@ -59,12 +50,12 @@ const EditStudentDataModal = ({ student, onClose, onDataUpdated }: EditStudentDa
             toast.error("Nilai harus berupa angka antara 0 dan 100.");
             return;
         }
-
         try {
-            await homeroomApiClient.put(`/homeroom/grades/${gradeId}`, { score: scoreValue });
+            // ✅ PERBAIKAN: Gunakan endpoint yang benar
+            await homeroomApiClient.put(`/grades/${gradeId}`, { score: scoreValue });
             toast.success("Nilai berhasil diperbarui!");
-            fetchDetails(); // Memuat ulang detail di dalam modal
-            onDataUpdated(); // Memuat ulang data utama di dashboard
+            fetchDetails();
+            onDataUpdated();
         } catch (error) {
             toast.error("Gagal memperbarui nilai.");
         }
@@ -72,28 +63,30 @@ const EditStudentDataModal = ({ student, onClose, onDataUpdated }: EditStudentDa
 
     const handleAttendanceChange = async (attendanceId: number, newStatus: string) => {
         try {
-            await homeroomApiClient.put(`/homeroom/attendance/${attendanceId}`, { status: newStatus });
+            // ✅ PERBAIKAN: Gunakan endpoint yang benar
+            await homeroomApiClient.put(`/attendance/${attendanceId}`, { status: newStatus });
             toast.success("Absensi berhasil diperbarui!");
-            fetchDetails(); // Memuat ulang detail di dalam modal
-            onDataUpdated(); // Memuat ulang data utama di dashboard
+            fetchDetails();
+            onDataUpdated();
         } catch (error) {
             toast.error("Gagal memperbarui absensi.");
         }
     };
-
-    if (!student) return null;
-
-    async function handleDeleteAttendance(id: number): Promise<void> {
+    
+    const handleDeleteAttendance = async (id: number) => {
         if (!window.confirm('Apakah Anda yakin ingin menghapus catatan absensi ini?')) return;
         try {
-            await homeroomApiClient.delete(`/homeroom/attendance/${id}`);
+            // ✅ PERBAIKAN: Gunakan endpoint yang benar
+            await homeroomApiClient.delete(`/attendance/${id}`);
             toast.success('Catatan absensi berhasil dihapus.');
-            fetchDetails(); // Refresh detail data in modal
-            onDataUpdated(); // Refresh main dashboard data
+            fetchDetails();
+            onDataUpdated();
         } catch (error) {
             toast.error('Gagal menghapus catatan absensi.');
         }
     }
+
+    if (!student) return null;
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex text-gray-600 justify-center items-center z-50 p-4">
@@ -209,7 +202,7 @@ export default function HomeroomDashboardPage() {
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const response = await homeroomApiClient.get(`/homeroom`);
+            const response = await homeroomApiClient.get(`/`);
             setDashboardData(response.data);
             setError(null);
         } catch (err: any) {
@@ -230,8 +223,23 @@ export default function HomeroomDashboardPage() {
         setIsViewModalOpen(true);
     };
 
-    const handleAddNote = async (e: React.FormEvent) => { /* ... (logika handleAddNote) ... */ };
-
+const handleAddNote = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const toastId = toast.loading('Menyimpan catatan...');
+        try {
+            // ✅ PERBAIKAN: Gunakan endpoint yang benar dan kirim id sebagai angka
+            await homeroomApiClient.post(`/notes`, {
+                studentId: parseInt(selectedStudentIdForNote),
+                content: noteContent
+            });
+            toast.success("Catatan berhasil ditambahkan!", { id: toastId });
+            setNoteContent('');
+            setSelectedStudentIdForNote('');
+            fetchData();
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Gagal menyimpan catatan.', { id: toastId });
+        }
+    };
     // Return kondisional sekarang aman karena semua hook sudah dipanggil
     if (isLoading) return <div className="p-8 text-center">Memuat Dashboard...</div>;
     if (error) return <div className="p-8 text-center text-red-500">{error}</div>;

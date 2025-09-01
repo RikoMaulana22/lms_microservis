@@ -1,7 +1,10 @@
+// Path: client/app/admin/materi/page.tsx
 'use client';
 
-import { useState, useEffect, useCallback, FormEvent } from 'react';
-import adminApiClient from '@/lib/axiosAdmin';
+import { useState, FormEvent, useEffect, useCallback } from 'react';
+// ✅ PERBAIKAN: Ganti adminApiClient dengan classContentApiClient
+import classContentApiClient from '@/lib/axiosClassContent';
+import toast from 'react-hot-toast'; // ✅ TAMBAHAN: Impor toast
 import { FaFilePdf, FaTrash } from 'react-icons/fa';
 
 interface GlobalMaterial {
@@ -23,9 +26,12 @@ export default function ManageGlobalMaterialsPage() {
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const response = await adminApiClient.get(`/materials/global`);
+            // ✅ PERBAIKAN: Gunakan client yang benar dan sesuaikan endpoint
+            // baseURL '/api/classes' + '../materials/global' -> '/api/materials/global'
+            const response = await classContentApiClient.get(`../materials/global`);
             setMaterials(response.data);
         } catch (error) {
+            toast.error("Gagal memuat materi global.");
             console.error("Gagal mengambil materi global:", error);
         } finally {
             setIsLoading(false);
@@ -39,7 +45,7 @@ export default function ManageGlobalMaterialsPage() {
     const handleUpload = async (e: FormEvent) => {
         e.preventDefault();
         if (!file || !title) {
-            alert('Judul dan file wajib diisi.');
+            toast.error('Judul dan file wajib diisi.');
             return;
         }
         
@@ -48,16 +54,22 @@ export default function ManageGlobalMaterialsPage() {
         formData.append('file', file);
         
         setIsUploading(true);
+        const toastId = toast.loading('Mengunggah materi...');
         try {
-            await adminApiClient.post('/materials/global', formData, {
+            // ✅ PERBAIKAN: Gunakan client yang benar dan sesuaikan endpoint
+            await classContentApiClient.post('../materials/global', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
-            alert('Materi berhasil diunggah!');
+            toast.success('Materi berhasil diunggah!', { id: toastId });
             setTitle('');
             setFile(null);
+            // Reset file input
+            const fileInput = document.getElementById('file-input') as HTMLInputElement;
+            if (fileInput) fileInput.value = '';
+            
             fetchData(); // Refresh list
-        } catch (error) {
-            alert('Gagal mengunggah materi.');
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Gagal mengunggah materi.', { id: toastId });
         } finally {
             setIsUploading(false);
         }
@@ -65,12 +77,14 @@ export default function ManageGlobalMaterialsPage() {
 
     const handleDelete = async (materialId: number) => {
         if (window.confirm('Yakin ingin menghapus materi ini?')) {
+            const toastId = toast.loading('Menghapus materi...');
             try {
-                await adminApiClient.delete(`/materials/global/${materialId}`);
-                alert('Materi berhasil dihapus.');
+                // ✅ PERBAIKAN: Gunakan client yang benar dan sesuaikan endpoint
+                await classContentApiClient.delete(`../materials/global/${materialId}`);
+                toast.success('Materi berhasil dihapus.', { id: toastId });
                 fetchData();
-            } catch (error) {
-                alert('Gagal menghapus materi.');
+            } catch (error: any) {
+                toast.error(error.response?.data?.message || 'Gagal menghapus materi.', { id: toastId });
             }
         }
     };
@@ -92,10 +106,10 @@ export default function ManageGlobalMaterialsPage() {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-800">File</label>
-                        <input type="file" onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)} required className="form-input w-full mt-1" />
+                        <input id="file-input" type="file" onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)} required className="form-input w-full mt-1" />
                     </div>
                     <div className="text-right ">
-                        <button type="submit" disabled={isUploading} className="px-6 py-2 bg-blue-800 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:bg-blue-300">
+                        <button type="submit" disabled={isUploading} className="btn-primary">
                             {isUploading ? 'Mengunggah...' : 'Unggah'}
                         </button>
                     </div>

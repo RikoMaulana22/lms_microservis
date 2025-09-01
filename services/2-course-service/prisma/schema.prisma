@@ -1,0 +1,69 @@
+// services/2-course-service/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL") // DATABASE_URL untuk Course Service
+}
+
+model Subject {
+  id    Int     @id @default(autoincrement())
+  name  String
+  grade Int
+  // Relasi ke Class dalam layanan yang sama dipertahankan
+  Class Class[]
+}
+
+model Class {
+  id                Int             @id @default(autoincrement())
+  name              String
+  description       String?
+  imageUrl          String?
+  createdAt         DateTime        @default(now())
+
+  // Relasi ke User dihilangkan, diganti dengan penyimpanan ID
+  teacherId         Int
+  homeroomTeacherId Int?
+
+  // Relasi ke Subject dipertahankan karena berada dalam layanan yang sama
+  subject           Subject         @relation(fields: [subjectId], references: [id])
+  subjectId         Int
+
+  members           Class_Members[]
+  topics            Topic[]
+}
+
+model Class_Members {
+  studentId Int
+  classId   Int
+  class     Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@id([studentId, classId])
+}
+
+model Topic {
+  id          Int        @id @default(autoincrement())
+  title       String
+  order       Int
+  createdAt   DateTime   @default(now())
+  classId     Int
+  class       Class      @relation(fields: [classId], references: [id], onDelete: Cascade)
+  // ID untuk relasi lintas layanan
+  assignmentIds Int[]
+  materialIds   Int[]
+  attendanceId  Int?
+}
+
+model Material {
+  id         Int      @id @default(autoincrement())
+  title      String
+  fileUrl    String?
+  content    String?
+  youtubeUrl String?
+  createdAt  DateTime @default(now())
+  topicId    Int?
+  topic      Topic?   @relation(fields: [topicId], references: [id], onDelete: SetNull)
+}

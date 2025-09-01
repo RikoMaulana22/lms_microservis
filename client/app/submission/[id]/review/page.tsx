@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, notFound } from 'next/navigation';
-import apiClient from '@/lib/axiosAdmin';
+import assignmentApiClient from '@/lib/axiosAssignment';
 import toast from 'react-hot-toast';
 import { FaCheck, FaTimes, FaInfoCircle } from 'react-icons/fa';
 import QuizNavigation from '@/components/quiz/QuizNavigation';
@@ -59,7 +59,7 @@ export default function SubmissionReviewPage() {
         setIsLoading(true);
         try {
             // Pastikan endpoint ini sesuai dengan API backend Anda
-            const response = await apiClient.get(`${process.env.NEXT_PUBLIC_API_URL_SUBMISSIONS}/review/${submissionId}`);
+            const response = await assignmentApiClient.get(`../submissions/${submissionId}/review`);
             setReviewData(response.data);
         } catch (error) {
             console.error("Gagal memuat hasil review:", error);

@@ -1,7 +1,8 @@
+// Path: client/components/dashboard/AnnouncementSection.tsx
 'use client';
 
 import { FaBullhorn } from 'react-icons/fa';
-import { Announcement } from '@/types'; // Kita akan pastikan tipe ini ada
+import { Announcement } from '@/types'; 
 
 interface AnnouncementSectionProps {
   announcements: Announcement[];
@@ -18,6 +19,7 @@ const AnnouncementSkeleton = () => (
     </div>
 );
 
+// ✅ TIDAK ADA PERBAIKAN: Kode ini sudah berfungsi dengan baik.
 export default function AnnouncementSection({ announcements, isLoading }: AnnouncementSectionProps) {
   if (isLoading) {
     return (
@@ -30,7 +32,6 @@ export default function AnnouncementSection({ announcements, isLoading }: Announ
     );
   }
   
-  // Jangan tampilkan section sama sekali jika tidak ada pengumuman
   if (announcements.length === 0) {
     return null;
   }
@@ -48,9 +49,8 @@ export default function AnnouncementSection({ announcements, isLoading }: Announ
                         Oleh {item.author.fullName} - {new Date(item.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </p>
                 </div>
-                <FaBullhorn className="text-blue-400 text-xl" />
             </div>
-            <p className="mt-3 text-gray-700 whitespace-pre-wrap">{item.content}</p>
+            <p className="mt-2 text-gray-700">{item.content}</p>
           </div>
         ))}
       </div>

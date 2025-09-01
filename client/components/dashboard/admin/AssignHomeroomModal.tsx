@@ -2,7 +2,9 @@
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
+// DIUBAH: Impor juga adminApiClient untuk mengambil data guru
 import homeroomApiClient from '@/lib/axiosHomeroom';
+import adminApiClient from '@/lib/axiosAdmin'; 
 import toast from 'react-hot-toast';
 import Modal from '@/components/ui/Modal';
 import { User } from '@/types';
@@ -23,7 +25,8 @@ export default function AssignHomeroomModal({ isOpen, onClose, onSuccess, select
         if (isOpen) {
             const fetchTeachers = async () => {
                 try {
-                    const res = await homeroomApiClient.get('/admin/users?role=guru');
+                    // DIUBAH: Menggunakan adminApiClient untuk mengambil daftar semua guru
+                    const res = await adminApiClient.get('/teachers');
                     setTeachers(res.data);
                 } catch (error) {
                     toast.error("Gagal memuat daftar guru.");
@@ -35,26 +38,40 @@ export default function AssignHomeroomModal({ isOpen, onClose, onSuccess, select
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
+        
+        if (!selectedTeacherId) {
+            toast.error("Silakan pilih seorang guru.");
+            return;
+        }
+
         setIsSubmitting(true);
         const toastId = toast.loading("Menyimpan...");
 
         try {
+            // INI SUDAH BENAR: Menggunakan homeroomApiClient untuk menetapkan wali kelas
             await homeroomApiClient.put(`/admin/classes/${selectedClass?.id}/assign-homeroom`, {
-                teacherId: selectedTeacherId // Kirim ID guru yang dipilih
+                // DIUBAH: Pastikan ID dikirim sebagai angka
+                teacherId: parseInt(selectedTeacherId, 10) 
             });
             toast.success("Wali kelas berhasil ditetapkan!", { id: toastId });
-            onSuccess(); // Refresh data di halaman utama
-            onClose();   // Tutup modal
-        } catch (error) {
-            toast.error("Gagal menetapkan wali kelas.", { id: toastId });
+            onSuccess();
+            onClose();
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Gagal menetapkan wali kelas.", { id: toastId });
         } finally {
             setIsSubmitting(false);
         }
     };
+    
+    // Reset state saat modal ditutup
+    const handleClose = () => {
+        setSelectedTeacherId('');
+        onClose();
+    };
 
     return (
         <div className="text-gray-800">
-        <Modal isOpen={isOpen} onClose={onClose} title={`Setel Wali Kelas untuk ${selectedClass?.name}`}>
+        <Modal isOpen={isOpen} onClose={handleClose} title={`Setel Wali Kelas untuk ${selectedClass?.name}`}>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                     <label className="block text-sm font-medium">Pilih Guru</label>
@@ -71,7 +88,7 @@ export default function AssignHomeroomModal({ isOpen, onClose, onSuccess, select
                     </select>
                 </div>
                 <div className="flex justify-end gap-4 pt-4">
-                    <button type="button" onClick={onClose} className="btn-secondary">Batal</button>
+                    <button type="button" onClick={handleClose} className="btn-secondary">Batal</button>
                     <button type="submit" disabled={isSubmitting} className="btn-primary">
                         {isSubmitting ? "Menyimpan..." : "Simpan"}
                     </button>

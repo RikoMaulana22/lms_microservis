@@ -5,6 +5,7 @@ import { useState, FormEvent, useEffect } from 'react';
 import classContentApiClient from '@/lib/axiosClassContent';
 import Modal from '@/components/ui/Modal';
 import { TopicInfo } from '@/types'; // Asumsikan tipe ini ada
+import toast from 'react-hot-toast';
 
 interface EditTopicModalProps {
   isOpen: boolean;
@@ -32,7 +33,7 @@ export default function EditTopicModal({ isOpen, onClose, topic, onTopicUpdated 
     setIsLoading(true);
     setError(null);
     try {
-      await classContentApiClient.put(`/topics/${topic.id}`, { title });
+      await classContentApiClient.put(`../topics/${topic.id}`, { title });
       onTopicUpdated();
       onClose();
     } catch (err: any) {

@@ -1,7 +1,9 @@
+// Path: client/app/admin/pengaturan/page.tsx
 'use client';
 
 import { useState, useEffect, useCallback, FormEvent } from 'react';
 import adminApiClient from '@/lib/axiosAdmin';
+import toast from 'react-hot-toast'; // ✅ TAMBAHAN: Impor toast
 
 interface Settings {
     schoolName?: string;
@@ -16,9 +18,12 @@ export default function SettingsPage() {
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const response = await adminApiClient.get(`${process.env.NEXT_PUBLIC_API_URL_ADMIN}/settings`);
+            // ✅ PERBAIKAN: Gunakan path relatif untuk mengakses endpoint /api/settings
+            // baseURL '/api/admin' + '../settings' -> '/api/settings'
+            const response = await adminApiClient.get('../settings');
             setSettings(response.data);
         } catch (error) {
+            toast.error("Gagal memuat pengaturan.");
             console.error("Gagal mengambil pengaturan:", error);
         } finally {
             setIsLoading(false);
@@ -37,11 +42,13 @@ export default function SettingsPage() {
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setIsSaving(true);
+        const toastId = toast.loading('Menyimpan pengaturan...');
         try {
-            await adminApiClient.post('/settings', settings);
-            alert('Pengaturan berhasil disimpan!');
-        } catch (error) {
-            alert('Gagal menyimpan pengaturan.');
+            // ✅ PERBAIKAN: Gunakan path relatif untuk mengakses endpoint /api/settings
+            await adminApiClient.post('../settings', settings);
+            toast.success('Pengaturan berhasil disimpan!', { id: toastId });
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Gagal menyimpan pengaturan.', { id: toastId });
         } finally {
             setIsSaving(false);
         }
@@ -80,7 +87,7 @@ export default function SettingsPage() {
                     <button
                         type="submit"
                         disabled={isSaving}
-                        className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:bg-blue-300"
+                        className="btn-primary" // ✅ PERBAIKAN: Gunakan class konsisten
                     >
                         {isSaving ? 'Menyimpan...' : 'Simpan Pengaturan'}
                     </button>

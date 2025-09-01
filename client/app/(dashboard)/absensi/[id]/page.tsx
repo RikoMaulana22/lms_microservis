@@ -33,7 +33,7 @@ export default function AttendanceDetailPage() {
   const params = useParams();
   const { id } = params;
   const { user } = useAuth();
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+    const backendUrl = process.env.NEXT_PUBLIC_ATTENDANCE_SERVICE_URL || 'http://localhost:5004';
 
 
   const [attendanceData, setAttendanceData] = useState<AttendanceDetails | null>(null);
@@ -44,7 +44,7 @@ export default function AttendanceDetailPage() {
   const fetchData = useCallback(async () => {
     if (id) {
       try {
-        const response = await attendanceApiClient.get(`/attendance/${id}`);
+                const response = await attendanceApiClient.get(`/${id}`);
         setAttendanceData(response.data);
       } catch (err) {
         setError('Gagal memuat data absensi.');

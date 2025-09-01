@@ -52,12 +52,12 @@ export default function AddAssignmentModal({ isOpen, onClose, topicId, onAssignm
     const { name, value } = e.target;
     setAssignment(prev => ({ ...prev, [name]: value }));
   };
-  
+
   const handleSelectQuestions = (questions: Question[]) => {
     setAssignment(prev => ({ ...prev, selectedQuestions: questions }));
     setIsQuestionBankOpen(false);
   };
-  
+
   const removeSelectedQuestion = (questionId: number) => {
     setAssignment(prev => ({
       ...prev,
@@ -82,12 +82,13 @@ export default function AddAssignmentModal({ isOpen, onClose, topicId, onAssignm
     const payload = {
       title: assignment.title,
       description: assignment.description,
-      dueDate: assignment.dueDate,
+      dueDate: new Date(assignment.dueDate).toISOString(),
       questionIds: assignment.selectedQuestions.map(q => q.id),
     };
 
     try {
-      await assignmentApiClient.post(`/assignments/topic/${topicId}/from-bank`, payload);
+      // ✅ PERBAIKAN: Hapus duplikasi path '/assignments'
+      await assignmentApiClient.post(`/topic/${topicId}/from-bank`, payload);
       toast.success('Tugas berhasil dibuat!', { id: loadingToast });
       onAssignmentAdded();
       onClose();
@@ -107,7 +108,7 @@ export default function AddAssignmentModal({ isOpen, onClose, topicId, onAssignm
           {/* Konten Form (Bagian Atas) */}
           <div className="flex-grow p-6 overflow-y-auto">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              
+
               {/* Kolom Kiri: Detail Tugas */}
               <div className="space-y-4 p-4 border rounded-lg bg-white shadow-sm">
                 <h3 className="font-semibold text-xl border-b pb-2">Detail Tugas</h3>
@@ -161,7 +162,7 @@ export default function AddAssignmentModal({ isOpen, onClose, topicId, onAssignm
               </div>
             </div>
           </div>
-          
+
           {/* Tombol Aksi (Bagian Bawah) */}
           <div className="flex-shrink-0 flex justify-end gap-4 p-4 bg-white border-t">
             <button type="button" onClick={onClose} className="btn-secondary">Batal</button>
@@ -171,7 +172,7 @@ export default function AddAssignmentModal({ isOpen, onClose, topicId, onAssignm
           </div>
         </form>
       </Modal>
-      
+
       {/* Modal untuk Bank Soal (tidak diubah) */}
       <QuestionBankSelector
         isOpen={isQuestionBankOpen}

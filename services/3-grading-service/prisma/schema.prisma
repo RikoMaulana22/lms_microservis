@@ -1,0 +1,91 @@
+// services/3-grading-service/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL") // DATABASE_URL untuk Grading Service
+}
+
+enum AssignmentType {
+  pilgan
+  esai
+  upload_gambar
+  link_google
+}
+
+model Assignment {
+  id            Int            @id @default(autoincrement())
+  title         String
+  description   String?        @db.Text
+  type          AssignmentType
+  dueDate       DateTime
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  topicId       Int?           // ID dari Course Service
+  externalUrl   String?        @db.Text
+  startTime     DateTime?
+  endTime       DateTime?
+  timeLimit     Int?
+  attemptLimit  Int?           @default(1)
+  passingGrade  Int?           @default(70)
+  questions     Question[]
+  submissions   Submission[]
+}
+
+model Question {
+  id             Int        @id @default(autoincrement())
+  questionText   String     @db.Text
+  assignmentId   Int
+  assignment     Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  options        Option[]
+}
+
+model Option {
+  id           Int      @id @default(autoincrement())
+  optionText   String
+  isCorrect    Boolean  @default(false)
+  explanation  String?
+  questionId   Int
+  question     Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model Submission {
+  id              Int        @id @default(autoincrement())
+  submissionDate  DateTime   @default(now())
+  score           Float?
+  essayAnswer     String?    @db.Text
+  fileUrl         String?
+  studentId       Int        // ID dari User Service
+  assignmentId    Int
+  assignment      Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  updatedAt       DateTime   @updatedAt
+  selectedOptions Json?
+  startedOn       DateTime?
+  completedOn     DateTime?
+  timeTakenMs     Int?
+
+  @@unique([studentId, assignmentId])
+}
+
+model GradeComponent {
+  id        Int      @id @default(autoincrement())
+  name      String
+  maxScore  Int      @default(100)
+  date      DateTime @default(now())
+  classId   Int      // ID dari Course Service
+  subjectId Int      // ID dari Course Service
+  grades    StudentGrade[]
+}
+
+model StudentGrade {
+  id               Int            @id @default(autoincrement())
+  score            Float
+  studentId        Int            // ID dari User Service
+  gradeComponentId Int
+  component        GradeComponent @relation(fields: [gradeComponentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, gradeComponentId])
+}

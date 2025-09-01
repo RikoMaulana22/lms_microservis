@@ -34,7 +34,7 @@ export default function QuestionBankSelector({ isOpen, onClose, onSelect, previo
       setIsLoading(true);
       try {
         // --- PERUBAHAN UTAMA: Panggil API di sini ---
-        const response = await assignmentApiClient.get('/question-bank');
+        const response = await assignmentApiClient.get('../question-banks');
         setAllQuestions(response.data);
         // ------------------------------------------
       } catch (error) {

@@ -3,12 +3,12 @@
 
 import { useState, FormEvent } from 'react';
 import classContentApiClient from '@/lib/axiosClassContent';
-
+import toast from 'react-hot-toast';
 interface UploadMaterialModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUploadSuccess: () => void;
-  classId: string | string[];
+  classId: number; 
 }
 
 export default function UploadMaterialModal({ isOpen, onClose, onUploadSuccess, classId }: UploadMaterialModalProps) {
@@ -35,17 +35,22 @@ export default function UploadMaterialModal({ isOpen, onClose, onUploadSuccess, 
     const formData = new FormData();
     formData.append('title', title);
     formData.append('file', file);
+    formData.append('classId', classId.toString());
+
+    const toastId = toast.loading('Memproses...'); 
 
     try {
-      await classContentApiClient.post(`/classes/${classId}/materials`, formData, {
+      await classContentApiClient.post(`../materials`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
+      toast.success('Materi berhasil diunggah!', { id: toastId });
+
       onUploadSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Gagal mengunggah materi.');
+      toast.error(err.response?.data?.message || 'Gagal mengunggah materi.', { id: toastId });
     } finally {
       setIsLoading(false);
     }

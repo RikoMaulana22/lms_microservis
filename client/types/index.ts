@@ -9,6 +9,7 @@ export interface User {
   email: string;
   createdAt?: string;
   nisn?: string | null; // Dibuat opsional karena tidak semua user punya
+  homeroomClassId?: number; 
 
 
 }
@@ -29,8 +30,11 @@ export interface ClassInfo {
   name: string;
   description?: string;
   subject: Subject;
-  teacher: Teacher;
-  homeroomTeacher: Teacher | null; // homeroomTeacher bisa berupa objek Teacher lengkap atau null
+  teacher: Teacher; // Pastikan ini 'teacher'
+  homeroomTeacher?: Teacher; // Pastikan ini 'homeroomTeacher'
+  _count?: {
+    members?: number;
+  };
 }
 
 export interface Subject {
