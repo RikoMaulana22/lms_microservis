@@ -1,40 +1,42 @@
-// Path: server/src/routes/index.ts
+// services/2-course-service/src/index.ts
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import path from 'path'; // Diperlukan untuk menyajikan file statis
 
-import { Router } from 'express';
-import classRoutes from './class.routes';
-import subjectRoutes from './subject.routes';
+// Impor semua rute yang relevan untuk layanan ini
+import classRoutes from './routes/class.routes';
+import subjectRoutes from './routes/subject.routes';
+import topicRoutes from './routes/topic.routes';
+import materialRoutes from './routes/material.routes';
 
-import { authenticate } from '../middlewares/auth.middleware';
-import topicRoutes from './topic.routes';
+// Muat variabel lingkungan dari file .env
+dotenv.config();
 
-import submissionRoutes from './submission.routes';
+const app = express();
+const PORT = process.env.PORT || 4002; // Port khusus untuk course-service
 
+// Middleware dasar
+app.use(cors());
+app.use(express.json());
 
-
-
-
-
-
-
-
-
-const mainRouter = Router();
-
-// Rute publik
-
-// Rute yang dilindungi autentikasi umum
-mainRouter.use('/classes', authenticate, classRoutes);
-mainRouter.use('/subjects', authenticate, subjectRoutes);
-
-mainRouter.use('/topics', authenticate, topicRoutes); // <-- BARIS BARU
-mainRouter.use('/submissions', authenticate, submissionRoutes); // <-- BARIS BARU
-;
+// Middleware untuk menyajikan file yang diunggah (misalnya, gambar sampul kelas)
+// Ini mengarahkan permintaan ke /uploads ke folder public/uploads di dalam layanan ini
+app.use('/uploads', express.static(path.join(__dirname, '../../public/uploads')));
 
 
+// Rute health check untuk memastikan layanan berjalan
+app.get('/', (req, res) => {
+    res.send('Course Service is running!');
+});
 
+// Daftarkan semua rute yang telah diimpor dengan prefix API-nya
+app.use('/api/classes', classRoutes);
+app.use('/api/subjects', subjectRoutes);
+app.use('/api/topics', topicRoutes);
+app.use('/api/materials', materialRoutes);
 
-
-
-
-
-export default mainRouter;
+// Jalankan server
+app.listen(PORT, () => {
+  console.log(`🚀 Course Service running on http://localhost:${PORT}`);
+});

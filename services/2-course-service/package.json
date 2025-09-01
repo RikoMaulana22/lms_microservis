@@ -26,7 +26,8 @@
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
-    "papaparse": "^5.5.3"
+    "papaparse": "^5.5.3",
+    "shared": "file:../../shared"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
