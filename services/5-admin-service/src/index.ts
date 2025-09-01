@@ -4,6 +4,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import adminRoutes from './routes/admin.routes';
 import homeroomRoutes from './routes/homeroom.routes';
+import announcementRoutes from './routes/announcement.routes';
+import { errorHandler } from 'shared/middlewares/error.middleware';
 
 dotenv.config();
 
@@ -20,6 +22,10 @@ app.get('/', (req, res) => {
 // Daftarkan rute
 app.use('/api/admin', adminRoutes);
 app.use('/api/homeroom', homeroomRoutes);
+app.use('/api/announcements', announcementRoutes);
+app.use(errorHandler);
+
+
 
 app.listen(PORT, () => {
   console.log(`🚀 Admin Service running on http://localhost:${PORT}`);

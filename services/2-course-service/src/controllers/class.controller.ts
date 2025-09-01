@@ -6,6 +6,7 @@ import axios from 'axios';
 
 const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://localhost:4001/api';
 const GRADING_SERVICE_URL = process.env.GRADING_SERVICE_URL || 'http://localhost:4003/api';
+const teacherResponse = await axios.get(`${USER_SERVICE_URL}/users/${classData.teacherId}`);
 
 const prisma = new PrismaClient();
 

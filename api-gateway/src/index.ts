@@ -27,5 +27,6 @@ app.use('/api/schedules', createProxyMiddleware({ target: serviceTargets.ATTENDA
 app.use('/api/attendance', createProxyMiddleware({ target: serviceTargets.ATTENDANCE_SERVICE, changeOrigin: true }));
 app.use('/api/admin', createProxyMiddleware({ target: serviceTargets.ADMIN_SERVICE, changeOrigin: true }));
 app.use('/api/homeroom', createProxyMiddleware({ target: serviceTargets.ADMIN_SERVICE, changeOrigin: true }));
+app.use('/api/announcements', createProxyMiddleware({ target: serviceTargets.ADMIN_SERVICE, changeOrigin: true }));
 
 app.listen(PORT, () => console.log(`API Gateway is running on port ${PORT}`));

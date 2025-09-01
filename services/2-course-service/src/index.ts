@@ -9,7 +9,7 @@ import classRoutes from './routes/class.routes';
 import subjectRoutes from './routes/subject.routes';
 import topicRoutes from './routes/topic.routes';
 import materialRoutes from './routes/material.routes';
-
+import { errorHandler } from 'shared/middlewares/error.middleware';
 // Muat variabel lingkungan dari file .env
 dotenv.config();
 
@@ -35,6 +35,7 @@ app.use('/api/classes', classRoutes);
 app.use('/api/subjects', subjectRoutes);
 app.use('/api/topics', topicRoutes);
 app.use('/api/materials', materialRoutes);
+app.use(errorHandler);
 
 // Jalankan server
 app.listen(PORT, () => {
