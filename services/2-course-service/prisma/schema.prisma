@@ -6,29 +6,27 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL") // DATABASE_URL untuk Course Service
+  url      = env("DATABASE_URL")
 }
 
 model Subject {
   id    Int     @id @default(autoincrement())
   name  String
   grade Int
-  // Relasi ke Class dalam layanan yang sama dipertahankan
   Class Class[]
 }
 
+// --- PASTIKAN MODEL INI ADA ---
 model Class {
   id                Int             @id @default(autoincrement())
   name              String
   description       String?
   imageUrl          String?
   createdAt         DateTime        @default(now())
+  
+  teacherId         Int             // ID dari User Service
+  homeroomTeacherId Int?            // ID dari User Service
 
-  // Relasi ke User dihilangkan, diganti dengan penyimpanan ID
-  teacherId         Int
-  homeroomTeacherId Int?
-
-  // Relasi ke Subject dipertahankan karena berada dalam layanan yang sama
   subject           Subject         @relation(fields: [subjectId], references: [id])
   subjectId         Int
 
@@ -40,7 +38,6 @@ model Class_Members {
   studentId Int
   classId   Int
   class     Class @relation(fields: [classId], references: [id], onDelete: Cascade)
-
   @@id([studentId, classId])
 }
 
@@ -49,12 +46,11 @@ model Topic {
   title       String
   order       Int
   createdAt   DateTime   @default(now())
+  
   classId     Int
   class       Class      @relation(fields: [classId], references: [id], onDelete: Cascade)
-  // ID untuk relasi lintas layanan
-  assignmentIds Int[]
-  materials     Material[]
-  attendanceId  Int?
+
+  materials   Material[]
 }
 
 model Material {
@@ -64,6 +60,7 @@ model Material {
   content    String?
   youtubeUrl String?
   createdAt  DateTime @default(now())
+  
   topicId    Int?
   topic      Topic?   @relation(fields: [topicId], references: [id], onDelete: SetNull)
 }

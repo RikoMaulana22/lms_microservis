@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import {  loginUser, loginAdmin,  getMe, loginHomeroomTeacher   } from '../controllers/auth.controller';
+import {  loginUser, loginAdmin,  getMe   } from '../controllers/auth.controller';
 import { authenticate }  from 'shared/middlewares/auth.middleware';
 
 const router = Router();
@@ -9,7 +9,6 @@ router.post('/login', loginUser);
 // --- RUTE BARU: Login khusus admin ---
 router.post('/admin/login', loginAdmin);
 router.get('/me', authenticate, getMe);
-router.post('/login/homeroom', loginHomeroomTeacher);
 
 
 export default router;
