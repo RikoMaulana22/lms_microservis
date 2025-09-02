@@ -7,16 +7,16 @@ import {
     updateSchedule,
     getPublicSchedules 
 } from '../controllers/schedule.controller';
-import { authenticate } from '../middlewares/auth.middleware'; 
-import { checkRole } from '../middlewares/role.middleware';
+import { authenticate } from 'shared/middlewares/auth.middleware'; 
+import { authorize } from 'shared/middlewares/role.middleware';
 
 const router = Router();
 
 // --- PERBAIKI RUTE ADMIN DENGAN MENAMBAHKAN 'authenticate' ---
-router.get('/', authenticate, checkRole('admin'), getAllSchedules);
-router.post('/', authenticate, checkRole('admin'), createSchedule);
-router.put('/:id', authenticate, checkRole('admin'), updateSchedule);
-router.delete('/:id', authenticate, checkRole('admin'), deleteSchedule);
+router.get('/', authenticate, authorize('admin'), getAllSchedules);
+router.post('/', authenticate, authorize('admin'), createSchedule);
+router.put('/:id', authenticate, authorize('admin'), updateSchedule);
+router.delete('/:id', authenticate, authorize('admin'), deleteSchedule);
 
 // --- Rute untuk Siswa & Guru (Perlu 'authenticate') ---
 router.get('/my', authenticate, getMySchedule);

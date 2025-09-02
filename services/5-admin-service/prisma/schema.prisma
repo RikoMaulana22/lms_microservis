@@ -16,6 +16,19 @@ enum NoteType {
   CATATAN_ORANG_TUA
 }
 
+enum LetterType {
+  IZIN_SAKIT
+  IZIN_ACARA
+  PANGGILAN_ORANG_TUA
+}
+
+// PENINGKATAN: Enum baru untuk status surat
+enum LetterStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model Setting {
   id        Int      @id @default(autoincrement())
   key       String   @unique
@@ -23,10 +36,14 @@ model Setting {
   updatedAt DateTime @updatedAt
 }
 
-enum LetterType {
-  IZIN_SAKIT
-  IZIN_ACARA
-  PANGGILAN_ORANG_TUA
+// TAMBAHAN: Model Announcement yang hilang
+model Announcement {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String   @db.Text
+  authorId  Int      // ID admin/guru dari User Service
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model StudentNote {
@@ -40,11 +57,11 @@ model StudentNote {
 }
 
 model Letter {
-  id        Int        @id @default(autoincrement())
+  id        Int          @id @default(autoincrement())
   type      LetterType
-  date      DateTime   @default(now())
-  content   String     @db.Text
-  status    String
-  studentId Int?       // ID dari User Service
-  classId   Int        // ID dari Course Service
+  date      DateTime     @default(now())
+  content   String       @db.Text
+  status    LetterStatus @default(PENDING) // <-- PERUBAHAN DI SINI
+  studentId Int?         // ID dari User Service
+  classId   Int          // ID dari Course Service
 }

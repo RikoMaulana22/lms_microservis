@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import { getAllSubjects, getGroupedSubjects,  createSubject, updateSubject, deleteSubject } from '../controllers/subject.controller';
 import { authenticate } from 'shared/middlewares/auth.middleware';
-import { checkRole } from 'shared/middlewares/role.middleware';
+import { authorize } from 'shared/middlewares/role.middleware'; // <-- PERBAIKAN: Impor 'authorize'
 
 
 const router = Router();
@@ -11,10 +11,10 @@ const router = Router();
 router.get('/', authenticate, getAllSubjects);
 router.get('/grouped', authenticate, getGroupedSubjects);
 
-// Rute khusus admin (sudah benar)
-router.post('/', authenticate, checkRole('admin'), createSubject);
-router.put('/:id', authenticate, checkRole('admin'), updateSubject);
-router.delete('/:id', authenticate, checkRole('admin'), deleteSubject);
+// Rute khusus admin
+router.post('/', authenticate, authorize('admin'), createSubject); // <-- PERBAIKAN: Gunakan 'authorize'
+router.put('/:id', authenticate, authorize('admin'), updateSubject); // <-- PERBAIKAN: Gunakan 'authorize'
+router.delete('/:id', authenticate, authorize('admin'), deleteSubject); // <-- PERBAIKAN: Gunakan 'authorize'
 
 
 

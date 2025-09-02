@@ -1,13 +1,13 @@
 // Path: src/routes/topic.routes.ts
 import { Router } from 'express';
 import { updateTopic, deleteTopic } from '../controllers/topic.controller';
-import { checkRole } from 'shared/middlewares/role.middleware';
-import { authenticate } from 'shared/middlewares/auth.middleware'; // <-- 1. Impor authenticate
+import { authorize } from 'shared/middlewares/role.middleware'; // <-- PERBAIKAN: Impor 'authorize'
+import { authenticate } from 'shared/middlewares/auth.middleware';
 
 
 const router = Router();
 
-// 2. Tambahkan 'authenticate' sebelum 'checkRole'
-router.put('/:id', authenticate, checkRole('guru'), updateTopic);
-router.delete('/:id', authenticate, checkRole('guru'), deleteTopic);
+// Gunakan 'authorize' untuk mengecek peran 'guru'
+router.put('/:id', authenticate, authorize('guru'), updateTopic); // <-- PERBAIKAN: Gunakan 'authorize'
+router.delete('/:id', authenticate, authorize('guru'), deleteTopic); // <-- PERBAIKAN: Gunakan 'authorize'
 export default router;

@@ -1,108 +1,47 @@
 // Path: server/src/controllers/homeroom.controller.ts
 
 import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-import { AuthRequest } from '../middlewares/auth.middleware';
+// PERBAIKAN: Path impor salah, seharusnya ke 'shared'
+import { AuthRequest } from 'shared/middlewares/auth.middleware'; 
+import axios from 'axios'; // Diperlukan untuk komunikasi antar-service
 
-const prisma = new PrismaClient();
+// Definisikan base URL untuk service lain (sebaiknya dari .env)
+const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://user-service:4001';
+const COURSE_SERVICE_URL = process.env.COURSE_SERVICE_URL || 'http://course-service:4002';
+const GRADING_SERVICE_URL = process.env.GRADING_SERVICE_URL || 'http://grading-service:4003';
+const ATTENDANCE_SERVICE_URL = process.env.ATTENDANCE_SERVICE_URL || 'http://attendance-service:4004';
+
+// ===================================================================
+// CATATAN PENTING:
+// Fungsionalitas Wali Kelas (Homeroom) sangat bergantung pada data dari
+// berbagai service. Controller ini bertindak sebagai agregator, memanggil
+// service lain untuk mengumpulkan data.
+// ===================================================================
 
 export const getHomeroomDashboard = async (req: AuthRequest, res: Response) => {
     const teacherId = req.user?.userId;
     try {
-        // Langkah 1: Temukan kelas yang diampu oleh wali kelas.
-        const homeroomClass = await prisma.class.findFirst({
-            where: { homeroomTeacherId: teacherId },
-            include: {
-                members: {
-                    select: { user: { select: { id: true, fullName: true, nisn: true } } }
-                },
-            }
-        });
+        // Logika ini sangat kompleks dan memerlukan agregasi data dari semua service.
+        // Cara terbaik adalah membuat endpoint khusus di service yang relevan atau
+        // service agregator baru. Untuk saat ini, kita akan memanggil beberapa endpoint.
+
+        // 1. Dapatkan kelas yang diampu dari Course Service
+        const classResponse = await axios.get(`${COURSE_SERVICE_URL}/api/classes/homeroom-details/${teacherId}`);
+        const homeroomClass = classResponse.data;
 
         if (!homeroomClass) {
             return res.status(404).json({ message: 'Anda tidak ditugaskan sebagai wali kelas.' });
         }
-
-        // Langkah 2: Dapatkan semua ID siswa di kelas tersebut.
-        const studentIds = homeroomClass.members.map(member => member.user.id);
+        
+        const studentIds = homeroomClass.members.map((member: { user: { id: number } }) => member.user.id);
 
         if (studentIds.length === 0) {
-            // Jika tidak ada siswa, kembalikan data kosong lebih awal.
             return res.json({ ...homeroomClass, dailyAttendances: [] });
         }
-
-        // Langkah 3 (BARU & PENTING): Temukan SEMUA ID kelas yang diikuti oleh siswa-siswa tersebut.
-        const allStudentMemberships = await prisma.class_Members.findMany({
-            where: {
-                studentId: { in: studentIds }
-            },
-            select: {
-                classId: true
-            }
-        });
-        const allClassIds = [...new Set(allStudentMemberships.map(m => m.classId))];
-
-        // Langkah 4: Ambil data Absensi Harian (jika ada).
-        const dailyAttendances = await prisma.dailyAttendance.findMany({
-            where: { 
-                studentId: { in: studentIds },
-            },
-            include: {
-                class: {
-                    select: {
-                        subject: {
-                            select: { name: true }
-                        }
-                    }
-                }
-            }
-        });
-
-        // Langkah 5: Ambil data Absensi E-learning dari SEMUA kelas yang relevan.
-        const elearningAttendances = await prisma.attendanceRecord.findMany({
-            where: {
-                studentId: { in: studentIds },
-                attendance: {
-                    topic: {
-                        classId: { in: allClassIds } // <-- Menggunakan daftar semua ID kelas
-                    }
-                }
-            },
-            include: {
-                attendance: {
-                    include: {
-                        topic: {
-                            include: {
-                                class: {
-                                    include: {
-                                        subject: true
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        });
-
-        // Langkah 6: Ubah struktur data Absensi E-learning agar seragam.
-        const transformedElearningAttendances = elearningAttendances.map(att => ({
-            id: att.id,
-            date: att.timestamp,
-            status: att.status,
-            studentId: att.studentId,
-            class: {
-                subject: {
-                    name: att.attendance.topic.class.subject.name
-                }
-            }
-        }));
-
-        // Langkah 7: Gabungkan kedua jenis absensi.
-        const combinedAttendances = [
-            ...dailyAttendances,
-            ...transformedElearningAttendances
-        ];
+        
+        // 2. Dapatkan rekap absensi dari Attendance Service
+        const attendanceResponse = await axios.get(`${ATTENDANCE_SERVICE_URL}/api/attendance/recap/students?studentIds=${studentIds.join(',')}`);
+        const combinedAttendances = attendanceResponse.data;
         
         const responseData = {
             ...homeroomClass,
@@ -116,198 +55,74 @@ export const getHomeroomDashboard = async (req: AuthRequest, res: Response) => {
     }
 };
 
-// ... (fungsi lainnya seperti addHomeroomNote, getStudentDetailsForHomeroom, dll. tetap sama) ...
 export const addHomeroomNote = async (req: AuthRequest, res: Response) => {
     const teacherId = req.user?.userId;
-    const { content, studentId, classId, type } = req.body;
-
     try {
-        const isHomeroomTeacher = await prisma.class.findFirst({
-            where: { id: classId, homeroomTeacherId: teacherId }
+        // Logika ini seharusnya ada di Course Service karena menyangkut data kelas dan siswa
+        const response = await axios.post(`${COURSE_SERVICE_URL}/api/notes/homeroom`, {
+            ...req.body,
+            authorId: teacherId
         });
-
-        if (!isHomeroomTeacher) {
-            return res.status(403).json({ message: 'Akses ditolak. Anda bukan wali kelas dari kelas ini.' });
-        }
-
-        const newNote = await prisma.studentNote.create({
-            data: {
-                content,
-                studentId,
-                classId,
-                authorId: teacherId!,
-                type: type || 'BIMBINGAN_KONSELING'
-            }
-        });
-
-        res.status(201).json(newNote);
-    } catch (error) {
-        console.error("Error addHomeroomNote:", error);
-        res.status(500).json({ message: 'Gagal menyimpan catatan.' });
+        res.status(201).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data || { message: 'Gagal menyimpan catatan.' });
     }
 };
 
-// Mengambil detail nilai dan absensi untuk satu siswa
 export const getStudentDetailsForHomeroom = async (req: AuthRequest, res: Response) => {
     const { studentId } = req.params;
     const teacherId = req.user?.userId;
-
     try {
-        // Validasi untuk memastikan yang mengakses adalah wali kelas yang sah
-        const student = await prisma.user.findUnique({
-            where: { id: Number(studentId) },
-            include: { memberships: { include: { class: true } } }
-        });
+        // 1. Validasi Wali Kelas via Course Service
+        await axios.get(`${COURSE_SERVICE_URL}/api/students/${studentId}/validate-homeroom/${teacherId}`);
 
-        if (!student) {
-            return res.status(404).json({ message: 'Siswa tidak ditemukan.' });
-        }
-
-        const isHomeroomTeacher = student.memberships.some(m => m.class.homeroomTeacherId === teacherId);
-        if (!isHomeroomTeacher) {
-            return res.status(403).json({ message: 'Akses ditolak. Anda bukan wali kelas siswa ini.' });
-        }
-
-        // --- PENGAMBILAN DATA NILAI (TIDAK BERUBAH) ---
-        const submissions = await prisma.submission.findMany({ 
-            where: { 
-                studentId: Number(studentId),
-                score: { not: null }
-            },
-            include: { 
-                assignment: {
-                    include: {
-                        topic: {
-                            include: {
-                                class: {
-                                    include: {
-                                        subject: true
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        });
-
-        const validSubmissions = submissions.filter(sub => sub.assignment?.topic?.class?.subject);
-        const transformedGrades = validSubmissions.map(sub => ({
-            id: sub.id,
-            score: sub.score,
-            component: {
-                name: sub.assignment.title, 
-                subject: {
-                    name: sub.assignment.topic!.class.subject.name
-                }
-            }
-        }));
-
-        // --- INTI PERBAIKAN UNTUK ABSENSI ---
-
-        // 1. Ambil semua ID kelas tempat siswa terdaftar
-        const enrolledClassIds = student.memberships.map(m => m.classId);
-
-        // 2. Ambil absensi e-learning dari SEMUA kelas tersebut
-        const elearningAttendances = await prisma.attendanceRecord.findMany({
-            where: {
-                studentId: Number(studentId),
-                attendance: {
-                    topic: {
-                        classId: { in: enrolledClassIds }
-                    }
-                }
-            },
-            orderBy: { timestamp: 'desc' }
-        });
+        // 2. Ambil data nilai dari Grading Service
+        const gradesPromise = axios.get(`${GRADING_SERVICE_URL}/api/grades/student/${studentId}`);
         
-        // 3. Ambil absensi harian yang diinput manual oleh wali kelas
-        const dailyAttendances = await prisma.dailyAttendance.findMany({ 
-            where: { studentId: Number(studentId) }, 
-            orderBy: { date: 'desc' } 
-        });
+        // 3. Ambil data absensi dari Attendance Service
+        const attendancePromise = await axios.get(`${ATTENDANCE_SERVICE_URL}/api/attendance/student/${studentId}`);
 
-        // 4. GABUNGKAN KEDUA JENIS ABSENSI MENJADI SATU
-        const combinedAttendances = [
-            ...dailyAttendances,
-            // Ubah struktur data e-learning agar cocok
-            ...elearningAttendances.map(att => ({
-                id: att.id,
-                date: att.timestamp, // Gunakan timestamp sebagai tanggal
-                status: att.status,
-                // Tambahkan data lain jika diperlukan oleh frontend
-            }))
-        ];
+        const [gradesResponse, attendanceResponse] = await Promise.all([gradesPromise, attendancePromise]);
 
-        // 5. Kirim data yang sudah lengkap ke frontend
         res.json({
-            dailyAttendances: combinedAttendances,
-            grades: transformedGrades
+            dailyAttendances: attendanceResponse.data,
+            grades: gradesResponse.data
         });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Gagal mengambil detail siswa:", error);
-        res.status(500).json({ message: 'Gagal mengambil detail siswa.' });
+        res.status(error.response?.status || 500).json(error.response?.data || { message: 'Gagal mengambil detail siswa.' });
     }
 };
 
-// Memperbarui satu record absensi harian
 export const updateStudentAttendance = async (req: AuthRequest, res: Response) => {
-    const { attendanceId } = req.params;
-    const { status } = req.body; // status: 'HADIR', 'SAKIT', 'IZIN', 'ALPA'
     try {
-        const updatedAttendance = await prisma.dailyAttendance.update({
-            where: { id: parseInt(attendanceId) },
-            data: { status }
-        });
-        res.json(updatedAttendance);
+        // Forward request ke Attendance Service
+        const { attendanceId } = req.params;
+        const response = await axios.put(`${ATTENDANCE_SERVICE_URL}/api/daily-attendance/${attendanceId}`, req.body);
+        res.json(response.data);
     } catch (error) {
         res.status(500).json({ message: 'Gagal memperbarui absensi.' });
     }
 };
 
-// --- TAMBAHKAN FUNGSI BARU DI SINI ---
-/**
- * @description Menghapus satu catatan absensi harian berdasarkan ID-nya.
- * @route DELETE /api/homeroom/attendance/:attendanceId
- */
 export const deleteStudentAttendance = async (req: AuthRequest, res: Response) => {
-    const { attendanceId } = req.params;
-    // Anda bisa menambahkan validasi keamanan di sini jika perlu,
-    // misalnya memastikan yang menghapus adalah wali kelas yang berhak.
-
     try {
-        // Cari catatan absensi untuk memastikan ada sebelum dihapus
-        const attendanceToDelete = await prisma.dailyAttendance.findUnique({
-            where: { id: parseInt(attendanceId) }
-        });
-
-        if (!attendanceToDelete) {
-            return res.status(404).json({ message: 'Catatan absensi tidak ditemukan.' });
-        }
-
-        // Lakukan operasi hapus
-        await prisma.dailyAttendance.delete({
-            where: { id: parseInt(attendanceId) },
-        });
-
-        res.status(200).json({ message: 'Catatan absensi berhasil dihapus.' });
-    } catch (error) {
-        console.error("Gagal menghapus catatan absensi:", error);
-        res.status(500).json({ message: 'Gagal menghapus catatan absensi.' });
+        // Forward request ke Attendance Service
+        const { attendanceId } = req.params;
+        const response = await axios.delete(`${ATTENDANCE_SERVICE_URL}/api/daily-attendance/${attendanceId}`);
+        res.status(200).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data || { message: 'Gagal menghapus catatan absensi.' });
     }
 };
 
-// Memperbarui satu record nilai
 export const updateStudentGrade = async (req: AuthRequest, res: Response) => {
-    const { gradeId } = req.params;
-    const { score } = req.body;
     try {
-        const updatedGrade = await prisma.studentGrade.update({
-            where: { id: parseInt(gradeId) },
-            data: { score: parseFloat(score) }
-        });
-        res.json(updatedGrade);
+        // Forward request ke Grading Service
+        const { gradeId } = req.params;
+        const response = await axios.put(`${GRADING_SERVICE_URL}/api/grades/${gradeId}`, req.body);
+        res.json(response.data);
     } catch (error) {
         res.status(500).json({ message: 'Gagal memperbarui nilai.' });
     }

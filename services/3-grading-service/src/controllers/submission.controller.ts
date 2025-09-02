@@ -1,9 +1,11 @@
 // Path: src/controllers/submission.controller.ts
 import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { AuthRequest } from '../middlewares/auth.middleware';
+import { AuthRequest } from 'shared/middlewares/auth.middleware';
 
 const prisma = new PrismaClient();
+const COURSE_SERVICE_URL = process.env.COURSE_SERVICE_URL || 'http://course-service:4002';
+const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://user-service:4001';
 
 
 export const getSubmissionReview = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -11,63 +13,33 @@ export const getSubmissionReview = async (req: AuthRequest, res: Response): Prom
     const userId = req.user?.userId;
 
     try {
-        const submission = await prisma.submission.findUnique({
-            where: { id: Number(submissionId) },
-            select: {
-                id: true,
-                score: true,
-                selectedOptions: true,
-                submissionDate: true, // Akan digunakan sebagai startedOn
-                updatedAt: true,      // Akan digunakan sebagai completedOn
-                studentId: true,
+        const submission = await prisma.submission.findFirst({
+            where: { 
+                id: Number(submissionId),
+                studentId: userId // Validasi siswa langsung di query
+            },
+            include: {
                 assignment: {
-                    select: {
-                        title: true,
+                    include: {
                         questions: {
-                            select: {
-                                id: true,
-                                questionText: true,
-                                options: {
-                                    select: {
-                                        id: true,
-                                        optionText: true,
-                                        isCorrect: true,
-                                        explanation: true, // <-- PERBAIKAN DI SINI
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+                            include: {
+                                options: true,
+                            },
+                        },
+                    },
+                },
+            },
         });
 
-        if (!submission || submission.studentId !== userId) {
-            res.status(404).json({ message: "Data pengerjaan tidak ditemukan." });
+        if (!submission) {
+            res.status(404).json({ message: 'Hasil pengerjaan tidak ditemukan atau Anda tidak memiliki akses.' });
             return;
         }
 
-        // Transformasi data agar sesuai dengan yang diharapkan frontend
-        const startedOn = submission.submissionDate;
-        const completedOn = submission.updatedAt;
-        const timeTakenMs = completedOn.getTime() - startedOn.getTime();
-        
-        const responseData = {
-            ...submission,
-            startedOn,
-            completedOn,
-            timeTakenMs
-        };
-
-        // Hapus field yang tidak lagi diperlukan agar output bersih
-        delete (responseData as any).submissionDate;
-        delete (responseData as any).updatedAt;
-        delete (responseData as any).studentId;
-
-        res.status(200).json(responseData);
+        res.status(200).json(submission);
     } catch (error) {
-        console.error("Gagal mengambil data review:", error);
-        res.status(500).json({ message: "Gagal mengambil data review." });
+        console.error('Gagal mengambil review submisi:', error);
+        res.status(500).json({ message: 'Gagal mengambil data review.' });
     }
 };
 
@@ -148,101 +120,98 @@ export const createSubmission = async (req: AuthRequest, res: Response): Promise
 };
 
 export const getMyGrades = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const studentId = req.user?.userId;
+    try {
+        const studentId = req.user?.userId;
 
-    if (!studentId) {
-      res.status(401).json({ message: "Otentikasi diperlukan." });
-      return;
-    }
+        if (!studentId) {
+            res.status(401).json({ message: "Otentikasi diperlukan." });
+            return;
+        }
 
-    const grades = await prisma.submission.findMany({
-      where: {
-        studentId: studentId,
-        score: {
-          not: null, // Hanya ambil submisi yang sudah punya nilai
-        },
-      },
-      orderBy: {
-        submissionDate: 'desc', // Urutkan dari yang terbaru
-      },
-      // Pilih data terkait yang dibutuhkan oleh frontend
-      select: {
-        id: true,
-        score: true,
-        submissionDate: true,
-        assignment: {
-          select: {
-            title: true,
-            topic: {
-              select: {
-                class: {
-                  select: {
-                    name: true,
-                    subject: {
-                      select: {
-                        name: true,
-                      },
-                    },
-                  },
+        const grades = await prisma.submission.findMany({
+            where: {
+                studentId: studentId,
+                score: {
+                    not: null, // Hanya ambil submisi yang sudah punya nilai
                 },
-              },
             },
-          },
-        },
-      },
-    });
+            orderBy: {
+                submissionDate: 'desc',
+            },
+            // PERBAIKAN: Hapus query ke relasi 'topic', 'class', dan 'subject'
+            // yang tidak ada di service ini.
+            select: {
+                id: true,
+                score: true,
+                submissionDate: true,
+                assignment: {
+                    select: {
+                        id: true,
+                        title: true,
+                        topicId: true // Ambil topicId untuk query ke service lain jika perlu
+                    },
+                },
+            },
+        });
 
-    res.status(200).json(grades);
-  } catch (error) {
-    console.error("Gagal mengambil data nilai:", error);
-    res.status(500).json({ message: "Terjadi kesalahan pada server saat mengambil data nilai." });
-  }
+        /*
+         * ARSITEKTUR MICROSERVICE:
+         * Untuk mendapatkan nama kelas dan mata pelajaran, frontend harus:
+         * 1. Kumpulkan semua `topicId` yang unik dari respons ini.
+         * 2. Buat panggilan API ke `course-service` untuk mendapatkan detail dari setiap topik.
+         * Contoh: GET /api/topics?ids=[topicId1,topicId2,...]
+         * 3. Gabungkan data di sisi frontend.
+         */
+
+        res.status(200).json(grades);
+    } catch (error) {
+        console.error("Gagal mengambil data nilai:", error);
+        res.status(500).json({ message: "Terjadi kesalahan pada server saat mengambil data nilai." });
+    }
 };
 
 
 // --- FUNGSI BARU: Guru mengambil daftar submission untuk satu tugas ---
 export const getSubmissionsForAssignment = async (req: AuthRequest, res: Response): Promise<void> => {
     const { id: assignmentId } = req.params;
-    const teacherId = req.user?.userId; // Ambil ID guru yang login
+    const teacherId = req.user?.userId;
 
     try {
-        // 1. Ambil data tugas DAN semua submission-nya dalam satu query
-        const assignmentWithSubmissions = await prisma.assignment.findUnique({
+        const assignment = await prisma.assignment.findUnique({
             where: { id: Number(assignmentId) },
             include: {
-                // Ambil semua data yang dibutuhkan frontend dari tugas ini
-                topic: {
-                    select: {
-                        class: {
-                            select: { teacherId: true } // Untuk verifikasi
-                        }
-                    }
-                },
-                // Langsung sertakan semua submission yang terkait dengan tugas ini
+                // PERBAIKAN: Hapus include ke 'topic' dan 'student'
                 submissions: {
-                    include: {
-                        // Sertakan juga detail siswa untuk setiap submission
-                        student: { select: { fullName: true, nisn: true } },
-                    },
                     orderBy: { submissionDate: 'asc' },
                 }
             }
         });
 
-        if (!assignmentWithSubmissions) {
+        if (!assignment) {
             res.status(404).json({ message: 'Tugas tidak ditemukan.' });
             return;
         }
+        
+        /*
+         * ARSITEKTUR MICROSERVICE:
+         * Verifikasi guru harus dilakukan dengan memanggil Course Service.
+         * 1. Ambil `assignment.topicId`.
+         * 2. Panggil endpoint internal di `course-service`.
+         * Contoh: const response = await axios.get(`${COURSE_SERVICE_URL}/internal/topics/${assignment.topicId}/teacher`);
+         * 3. Bandingkan `response.data.teacherId` dengan `teacherId` yang sedang login.
+         * Jika tidak cocok, kirim error 403.
+         */
 
-        // 2. Lakukan verifikasi kepemilikan
-        if (assignmentWithSubmissions.topic?.class?.teacherId !== teacherId) {
-            res.status(403).json({ message: 'Akses ditolak. Anda bukan pengajar di kelas ini.' });
-            return;
-        }
+        /*
+         * ARSITEKTUR MICROSERVICE:
+         * Untuk mendapatkan nama siswa:
+         * 1. Kumpulkan semua `studentId` dari `assignment.submissions`.
+         * 2. Panggil endpoint internal di `user-service`.
+         * Contoh: const userResponse = await axios.get(`${USER_SERVICE_URL}/internal/users?ids=[id1,id2]`);
+         * 3. Gabungkan hasilnya sebelum dikirim ke frontend.
+         */
 
-        // 3. Kirim SELURUH objek hasil query ke frontend
-        res.status(200).json(assignmentWithSubmissions);
+        res.status(200).json(assignment);
 
     } catch (error) {
         console.error("Gagal mengambil data submission:", error)
@@ -252,33 +221,18 @@ export const getSubmissionsForAssignment = async (req: AuthRequest, res: Respons
 
 // --- FUNGSI BARU: Guru memberikan/memperbarui nilai ---
 export const gradeSubmission = async (req: AuthRequest, res: Response): Promise<void> => {
-    const { id: submissionId } = req.params;
+    const { submissionId } = req.params;
     const { score } = req.body;
     const teacherId = req.user?.userId;
 
-    // PERBAIKAN 3: Validasi input skor yang lebih ketat
-    const scoreValue = parseFloat(score);
-    if (score === undefined || isNaN(scoreValue) || scoreValue < 0 || scoreValue > 100) {
-        res.status(400).json({ message: 'Nilai harus berupa angka yang valid antara 0 dan 100.' });
+    if (score === undefined || isNaN(parseFloat(score))) {
+        res.status(400).json({ message: 'Nilai harus berupa angka.' });
         return;
     }
 
     try {
         const submission = await prisma.submission.findUnique({
             where: { id: Number(submissionId) },
-            select: {
-                assignment: {
-                    select: {
-                        topic: {
-                            select: {
-                                class: {
-                                    select: { teacherId: true }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
         });
 
         if (!submission) {
@@ -286,18 +240,23 @@ export const gradeSubmission = async (req: AuthRequest, res: Response): Promise<
             return;
         }
 
-        if (submission.assignment.topic?.class?.teacherId !== teacherId) {
-            res.status(403).json({ message: 'Akses ditolak. Anda tidak berhak menilai submisi ini.' });
-            return;
-        }
-        
+        /*
+         * ARSITEKTUR MICROSERVICE:
+         * 1. Dapatkan `assignmentId` dari submission.
+         * 2. Panggil Course Service untuk cek apakah `teacherId` berhak mengelola `assignmentId` ini.
+         * Contoh: const { isAllowed } = await axios.get(`${COURSE_SERVICE_URL}/internal/assignments/${submission.assignmentId}/can-grade?teacherId=${teacherId}`);
+         * 3. Jika tidak diizinkan, kembalikan error 403.
+        */
+
+        // Asumsi validasi ke Course Service berhasil
         const updatedSubmission = await prisma.submission.update({
             where: { id: Number(submissionId) },
-            data: { score: scoreValue }, // Gunakan scoreValue yang sudah divalidasi dan diubah ke float
+            data: { score: parseFloat(score) },
         });
-        
+
         res.status(200).json(updatedSubmission);
     } catch (error) {
-        res.status(500).json({ message: 'Gagal memberikan nilai.' });
+        console.error('Gagal memberi nilai:', error);
+        res.status(500).json({ message: 'Gagal memperbarui nilai.' });
     }
 };

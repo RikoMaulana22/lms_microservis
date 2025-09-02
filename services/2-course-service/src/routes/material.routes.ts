@@ -9,8 +9,8 @@ import {
     deleteMaterial
 } from '../controllers/material.controller';
 import { authenticate } from 'shared/middlewares/auth.middleware';
-import { checkRole } from 'shared/middlewares/role.middleware';
-import { upload } from 'shared/middlewares/upload.middleware'; // Pastikan middleware upload sudah ada
+import { authorize } from 'shared/middlewares/role.middleware'; // <-- PERBAIKAN: Impor 'authorize'
+import { uploadFile } from 'shared/middlewares/upload.middleware'; // <-- PERBAIKAN: Impor 'uploadFile'
 
 const router = Router();
 
@@ -19,8 +19,8 @@ const router = Router();
 // Admin membuat materi global baru
 router.post('/global',
     authenticate,
-    checkRole('admin'),
-    upload.single('file'),
+    authorize('admin'), // <-- PERBAIKAN: Gunakan 'authorize'
+    uploadFile().single('file'), // <-- PERBAIKAN: Gunakan uploadFile()
     createGlobalMaterial
 );
 
@@ -36,8 +36,8 @@ router.get('/global',
 // Guru membuat materi baru di dalam sebuah topik
 router.post('/topics/:topicId',
     authenticate,
-    checkRole('guru'),
-    upload.single('file'),
+    authorize('guru'), // <-- PERBAIKAN: Gunakan 'authorize'
+    uploadFile().single('file'), // <-- PERBAIKAN: Gunakan uploadFile()
     createMaterialForTopic
 );
 
@@ -53,7 +53,7 @@ router.get('/topics/:topicId',
 // Guru atau Admin bisa menghapus materi
 router.delete('/:materialId',
     authenticate,
-    checkRole(['guru', 'admin']),
+    authorize(['guru', 'admin']), // <-- PERBAIKAN: Gunakan 'authorize'
     deleteMaterial
 );
 

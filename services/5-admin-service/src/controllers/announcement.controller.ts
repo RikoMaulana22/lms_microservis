@@ -1,5 +1,5 @@
 // services/5-admin-service/src/controllers/announcement.controller.ts
-import { Response } from 'express';
+import { Request, Response } from 'express'; 
 import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from 'shared/middlewares/auth.middleware';
 
@@ -14,7 +14,8 @@ export const createAnnouncement = async (req: AuthRequest, res: Response): Promi
             res.status(400).json({ message: 'Judul, konten, dan author ID harus diisi.' });
             return;
         }
-
+        
+        // Kode ini sudah benar. Error terjadi karena Prisma Client belum sinkron dengan skema.
         const announcement = await prisma.announcement.create({
             data: { title, content, authorId },
         });
@@ -27,6 +28,7 @@ export const createAnnouncement = async (req: AuthRequest, res: Response): Promi
 
 export const getAnnouncements = async (req: Request, res: Response): Promise<void> => {
     try {
+        // Kode ini sudah benar. Error terjadi karena Prisma Client belum sinkron dengan skema.
         const announcements = await prisma.announcement.findMany({
             orderBy: { createdAt: 'desc' },
         });

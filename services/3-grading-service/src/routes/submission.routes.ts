@@ -6,25 +6,25 @@ import {
     getMyGrades,
     getSubmissionReview
 } from '../controllers/submission.controller';
-import { authenticate } from '../middlewares/auth.middleware';
-import { checkRole } from '../middlewares/role.middleware';
+import { authenticate } from 'shared/middlewares/auth.middleware';
+import { authorize } from 'shared/middlewares/role.middleware';
 
 const router = Router();
 // Siswa mengumpulkan jawaban
-router.post('/assignment/:id', authenticate, checkRole('siswa'), createSubmission);
+router.post('/assignment/:id', authenticate, authorize('siswa'), createSubmission);
 
 // Guru melihat semua submission untuk sebuah tugas
-router.get('/assignment/:id', authenticate, checkRole('guru'), getSubmissionsForAssignment);
+router.get('/assignment/:id', authenticate, authorize('guru'), getSubmissionsForAssignment);
 
 // Guru memberi/mengubah nilai untuk sebuah submission
-router.put('/:id/grade', authenticate, checkRole('guru'), gradeSubmission);
+router.put('/:id/grade', authenticate, authorize('guru'), gradeSubmission);
 
 // Rute untuk siswa melihat semua nilainya
-router.get('/my-grades', authenticate, checkRole('siswa'), getMyGrades);
+router.get('/my-grades', authenticate, authorize('siswa'), getMyGrades);
 
 // --- PERBAIKAN DI SINI ---
 // Ubah urutan path dari '/:id/review' menjadi '/review/:id'
-router.get('/review/:id', authenticate, checkRole('siswa'), getSubmissionReview);
+router.get('/review/:id', authenticate, authorize('siswa'), getSubmissionReview);
 
 
 export default router;

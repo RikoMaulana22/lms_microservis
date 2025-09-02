@@ -20,61 +20,59 @@ import { getUsers,
     unenrollStudent,
     bulkCreateUsers,
     deleteClass,
-    testGetAllWaliKelas
+    
 
     
   } from '../controllers/admin.controller';
-import { authenticate } from '../middlewares/auth.middleware'; // Pastikan authenticate diimpor
-import { checkRole } from '../middlewares/role.middleware';   // Pastikan checkRole diimpor
-import { upload } from '../middlewares/upload.middleware'; // Impor middleware upload
+import { authenticate } from 'shared/middlewares/auth.middleware'; // Pastikan authenticate diimpor
+import { authorize } from 'shared/middlewares/role.middleware';   // Pastikan checkRole diimpor
+import { uploadFile } from 'shared/middlewares/upload.middleware'; // Impor middleware upload
 
 
 const router = Router();
 
-// Semua rute di file ini akan memiliki prefix /api/admin
-router.get('/test/walikelas', testGetAllWaliKelas); 
 
 // GET /api/admin/users
-router.get('/users', authenticate, checkRole('admin'), getUsers);
+router.get('/users', authenticate, authorize('admin'), getUsers);
 
-router.delete('/classes/:id', authenticate, checkRole('admin'), deleteClass);
+router.delete('/classes/:id', authenticate, authorize('admin'), deleteClass);
 
 
 // POST /api/admin/users
-router.post('/users', authenticate, checkRole('admin'), createUser);
+router.post('/users', authenticate, authorize('admin'), createUser);
 
 // --- PERBAIKI RUTE UPDATE DAN DELETE DI SINI ---
-router.put('/users/:id', authenticate, checkRole('admin'), updateUser);
-router.delete('/users/:id', authenticate, checkRole('admin'), deleteUser);
+router.put('/users/:id', authenticate, authorize('admin'), updateUser);
+router.delete('/users/:id', authenticate, authorize('admin'), deleteUser);
 
 // --- RUTE BARU: Untuk Manajemen Materi Global (Perlu perbaikan) ---
-router.get('/materials/global', authenticate, checkRole('admin'), getGlobalMaterialsAdmin);
-router.post('/materials/global', authenticate, checkRole('admin'), upload.single('file'), uploadGlobalMaterial);
-router.delete('/materials/global/:id', authenticate, checkRole('admin'), deleteGlobalMaterial);
+router.get('/materials/global', authenticate, authorize('admin'), getGlobalMaterialsAdmin);
+router.post('/materials/global', authenticate, authorize('admin'), uploadFile().single('file'), uploadGlobalMaterial);
+router.delete('/materials/global/:id', authenticate, authorize('admin'), deleteGlobalMaterial);
 // --- Rute untuk Laporan (Perlu perbaikan) ---
-router.get('/reports/attendance', authenticate, checkRole('admin'), getAttendanceReport);
-router.get('/reports/grades', authenticate, checkRole('admin'), getGradeReport);
+router.get('/reports/attendance', authenticate, authorize('admin'), getAttendanceReport);
+router.get('/reports/grades', authenticate, authorize('admin'), getGradeReport);
 // --- RUTE BARU UNTUK KELOLA KELAS (Perlu perbaikan) ---
 // --- RUTE UNTUK MANAJEMEN KELAS ---
-router.get('/classes', authenticate, checkRole('admin'), getAllClasses);
-router.get('/teachers', authenticate, checkRole('admin'), getAllTeachers);
-router.get('/subjects', authenticate, checkRole('admin'), getAllSubjects);
-router.post('/classes', authenticate, checkRole('admin'), createClass);
-router.get('/classes', authenticate, checkRole('admin'), getAllClasses);
-router.put('/classes/:classId/assign-homeroom', authenticate, checkRole('admin'), assignHomeroomTeacher);;
+router.get('/classes', authenticate, authorize('admin'), getAllClasses);
+router.get('/teachers', authenticate, authorize('admin'), getAllTeachers);
+router.get('/subjects', authenticate, authorize('admin'), getAllSubjects);
+router.post('/classes', authenticate, authorize('admin'), createClass);
+router.get('/classes', authenticate, authorize('admin'), getAllClasses);
+router.put('/classes/:classId/assign-homeroom', authenticate, authorize('admin'), assignHomeroomTeacher);
 router.get(
     '/classes/available-for-homeroom', 
     authenticate, 
-    checkRole('admin'), 
+    authorize('admin'), 
     getAvailableClassesForHomeroom
 );
 
 // Rute untuk manajemen pendaftaran siswa (enrollment)
-router.get('/classes/:classId/enrollments', authenticate, checkRole('admin'), getClassEnrollments);
-router.post('/classes/:classId/enrollments', authenticate, checkRole('admin'), enrollStudent);
-router.delete('/classes/:classId/enrollments/:studentId', authenticate, checkRole('admin'), unenrollStudent);
+router.get('/classes/:classId/enrollments', authenticate, authorize('admin'), getClassEnrollments);
+router.post('/classes/:classId/enrollments', authenticate, authorize('admin'), enrollStudent);
+router.delete('/classes/:classId/enrollments/:studentId', authenticate, authorize('admin'), unenrollStudent);
 
-router.post('/users/bulk', authenticate, checkRole('admin'), upload.single('file'), bulkCreateUsers);
+router.post('/users/bulk', authenticate, authorize('admin'), uploadFile().single('file'), bulkCreateUsers);
 
 router.put('/classes/:classId/homeroom', assignHomeroomTeacher);
 

@@ -1,115 +1,114 @@
-    // Path: src/controllers/attendance.controller.ts
-    import { Response } from 'express';
-    import { PrismaClient } from '@prisma/client';
-    import { AuthRequest } from '../middlewares/auth.middleware';
+// Path: src/controllers/attendance.controller.ts
+import { Response } from 'express';
+import { PrismaClient, DailyAttendanceStatus } from '@prisma/client';
+import { AuthRequest } from 'shared/middlewares/auth.middleware';
+import axios from 'axios'; // Diperlukan untuk komunikasi antar service
 
-    const prisma = new PrismaClient();
+const prisma = new PrismaClient();
 
-   
+// Sebaiknya URL ini disimpan di environment variables
+const COURSE_SERVICE_URL = process.env.COURSE_SERVICE_URL || 'http://course-service:4002';
+const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://user-service:4001';
 
-    // ==========================
+
+// ==========================
 // 📌 Buat Sesi Absensi
 // ==========================
 export const createAttendance = async (req: AuthRequest, res: Response): Promise<void> => {
-  const { topicId } = req.params;
-  const { title, openTime, closeTime } = req.body;
-  const userId = req.user?.userId;
+    const { topicId } = req.params;
+    const { title, openTime, closeTime } = req.body;
+    const userId = req.user?.userId;
 
-  if (!title || !openTime || !closeTime) {
-    res.status(400).json({ message: 'Judul, waktu buka, dan waktu tutup wajib diisi.' });
-    return;
-  }
-
-  try {
-    // Verifikasi bahwa pengguna adalah guru dari kelas tempat topik ini berada
-    const topic = await prisma.topic.findUnique({
-      where: { id: parseInt(topicId) },
-      include: { class: true },
-    });
-
-    if (!topic) {
-      res.status(404).json({ message: 'Topik tidak ditemukan.' });
-      return;
+    if (!title || !openTime || !closeTime) {
+        res.status(400).json({ message: 'Judul, waktu buka, dan waktu tutup wajib diisi.' });
+        return;
     }
 
-    if (topic.class.teacherId !== userId) {
-      res.status(403).json({ message: 'Akses ditolak. Anda bukan guru pemilik kelas ini.' });
-      return;
+    try {
+        /*
+         * ARSITEKTUR MICROSERVICE:
+         * Verifikasi kepemilikan guru harus dilakukan via API call ke Course Service.
+         * 1. Panggil Course Service untuk mendapatkan detail topik.
+         * Contoh: const { data: topicDetails } = await axios.get(`${COURSE_SERVICE_URL}/internal/topics/${topicId}`);
+         * 2. Bandingkan `topicDetails.class.teacherId` dengan `userId` yang login.
+         * if (topicDetails.class.teacherId !== userId) {
+         * return res.status(403).json({ message: 'Akses ditolak.' });
+         * }
+        */
+        
+        // PERBAIKAN: Hapus query langsung ke prisma.topic
+        const existingAttendance = await prisma.attendance.findUnique({
+            where: { topicId: parseInt(topicId) }
+        });
+
+        if (existingAttendance) {
+            res.status(409).json({ message: 'Sesi absensi untuk topik ini sudah ada.' });
+            return;
+        }
+
+        const newAttendance = await prisma.attendance.create({
+            data: {
+                title,
+                openTime: new Date(openTime),
+                closeTime: new Date(closeTime),
+                topicId: parseInt(topicId),
+            },
+        });
+
+        res.status(201).json(newAttendance);
+    } catch (error) {
+        console.error("Gagal membuat sesi absensi:", error);
+        res.status(500).json({ message: 'Gagal membuat sesi absensi.' });
     }
-
-    // ✅ Cek apakah sudah ada sesi absensi untuk topik ini
-    const existingAttendance = await prisma.attendance.findFirst({
-      where: { topicId: parseInt(topicId) }
-    });
-
-    if (existingAttendance) {
-      res.status(409).json({ message: 'Sesi absensi untuk topik ini sudah ada.' });
-      return;
-    }
-
-    // 🆕 Buat sesi absensi baru
-    const newAttendance = await prisma.attendance.create({
-      data: {
-        title,
-        openTime: new Date(openTime),
-        closeTime: new Date(closeTime),
-        topicId: parseInt(topicId),
-      },
-    });
-
-    res.status(201).json(newAttendance);
-  } catch (error) {
-    console.error("Gagal membuat sesi absensi:", error);
-    res.status(500).json({ message: 'Gagal membuat sesi absensi.' });
-  }
 };
 
 // ==========================
 // 📌 Detail Sesi Absensi
 // ==========================
 export const getAttendanceDetails = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const { id } = req.params;
+    try {
+        const { id } = req.params;
 
-    const attendanceDetails = await prisma.attendance.findUnique({
-      where: { id: parseInt(id) },
-      include: {
-        records: {
-          orderBy: { timestamp: 'asc' },
-          // PASTIKAN SEMUA FIELD INI ADA
-          select: {
-            timestamp: true,
-            status: true, // <-- DATA STATUS DITAMBAHKAN DI SINI
-            notes: true,   // <-- DATA KETERANGAN DITAMBAHKAN DI SINI
-            proofUrl: true,
-            student: {
-              select: {
-                id: true,
-                fullName: true,
-                nisn: true,
-              }
+        const attendanceDetails = await prisma.attendance.findUnique({
+            where: { id: parseInt(id) },
+            include: {
+                // PERBAIKAN: Hapus 'select' untuk relasi 'student'
+                records: {
+                    orderBy: { timestamp: 'asc' },
+                    select: {
+                        timestamp: true,
+                        status: true,
+                        notes: true,
+                        proofUrl: true,
+                        studentId: true // Ambil ID-nya saja
+                    }
+                }
             }
-          }
+        });
+
+        if (!attendanceDetails) {
+            res.status(404).json({ message: "Sesi absensi tidak ditemukan." });
+            return;
         }
-      }
-    });
 
-    if (!attendanceDetails) {
-      res.status(404).json({ message: "Sesi absensi tidak ditemukan." });
-      return;
+        /*
+         * ARSITEKTUR MICROSERVICE:
+         * Untuk menampilkan nama siswa, frontend perlu:
+         * 1. Kumpulkan semua `studentId` dari `attendanceDetails.records`.
+         * 2. Buat panggilan API ke `user-service` untuk mendapatkan detail user.
+         * 3. Gabungkan data di sisi frontend.
+        */
+
+        res.status(200).json(attendanceDetails);
+    } catch (error) {
+        console.error("Gagal mengambil detail absensi:", error);
+        res.status(500).json({ message: "Gagal mengambil detail absensi." });
     }
-
-    res.status(200).json(attendanceDetails);
-  } catch (error) {
-    console.error("Gagal mengambil detail absensi:", error);
-    res.status(500).json({ message: "Gagal mengambil detail absensi." });
-  }
 };
 
 // ==========================
 // 📌 Catat Kehadiran Siswa
 // ==========================
-// --- GANTIKAN SELURUH FUNGSI INI DENGAN VERSI BARU ---
 export const markAttendanceRecord = async (req: AuthRequest, res: Response) => {
     const { id: attendanceId } = req.params;
     const studentId = req.user?.userId;
@@ -124,7 +123,6 @@ export const markAttendanceRecord = async (req: AuthRequest, res: Response) => {
     }
 
     try {
-        // 1. Ambil detail sesi absensi
         const attendanceSession = await prisma.attendance.findUnique({
             where: { id: parseInt(attendanceId) },
         });
@@ -133,17 +131,17 @@ export const markAttendanceRecord = async (req: AuthRequest, res: Response) => {
             return res.status(404).json({ message: 'Sesi absensi tidak ditemukan.' });
         }
 
-        // 2. Validasi Waktu: Pastikan absensi dilakukan dalam rentang waktu yang ditentukan
         const now = new Date();
         if (now < attendanceSession.openTime || now > attendanceSession.closeTime) {
             return res.status(403).json({ message: 'Tidak dapat mengisi absensi di luar waktu yang ditentukan.' });
         }
 
-        // 3. Cek apakah siswa sudah pernah absen di sesi ini
-        const existingRecord = await prisma.attendanceRecord.findFirst({
+        const existingRecord = await prisma.attendanceRecord.findUnique({
             where: {
-                studentId: studentId,
-                attendanceId: parseInt(attendanceId),
+                studentId_attendanceId: { // Menggunakan unique constraint
+                    studentId: studentId,
+                    attendanceId: parseInt(attendanceId),
+                }
             },
         });
 
@@ -151,14 +149,14 @@ export const markAttendanceRecord = async (req: AuthRequest, res: Response) => {
             return res.status(409).json({ message: 'Anda sudah mencatat kehadiran untuk sesi ini.' });
         }
 
-        // 4. Buat catatan kehadiran baru di tabel yang benar (AttendanceRecord)
+        // PERBAIKAN: Simpan 'studentId' secara langsung, bukan melalui 'connect'
         const newRecord = await prisma.attendanceRecord.create({
             data: {
-                status,
+                status: status as DailyAttendanceStatus, // Pastikan tipe status sesuai
                 notes: notes || null,
                 proofUrl: proofFile ? proofFile.path.replace('public', '').replace(/\\/g, '/') : null,
-                student: { connect: { id: studentId } },
-                attendance: { connect: { id: parseInt(attendanceId) } },
+                studentId: studentId,
+                attendanceId: parseInt(attendanceId),
             },
         });
 
@@ -169,4 +167,3 @@ export const markAttendanceRecord = async (req: AuthRequest, res: Response) => {
         res.status(500).json({ message: 'Gagal mencatat kehadiran. Periksa log server.' });
     }
 };
-
