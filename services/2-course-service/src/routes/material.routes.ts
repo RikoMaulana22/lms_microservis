@@ -8,9 +8,9 @@ import {
     getMaterialsForTopic,
     deleteMaterial
 } from '../controllers/material.controller';
-import { authenticate } from '../middlewares/auth.middleware';
-import { checkRole } from '../middlewares/role.middleware';
-import { upload } from '../middlewares/upload.middleware'; // Pastikan middleware upload sudah ada
+import { authenticate } from 'shared/middlewares/auth.middleware';
+import { checkRole } from 'shared/middlewares/role.middleware';
+import { upload } from 'shared/middlewares/upload.middleware'; // Pastikan middleware upload sudah ada
 
 const router = Router();
 

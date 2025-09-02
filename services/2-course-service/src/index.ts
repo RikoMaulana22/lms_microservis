@@ -20,8 +20,7 @@ const PORT = process.env.PORT || 4002; // Port khusus untuk course-service
 app.use(cors());
 app.use(express.json());
 
-// Middleware untuk menyajikan file yang diunggah (misalnya, gambar sampul kelas)
-// Ini mengarahkan permintaan ke /uploads ke folder public/uploads di dalam layanan ini
+
 app.use('/uploads', express.static(path.join(__dirname, '../../public/uploads')));
 
 

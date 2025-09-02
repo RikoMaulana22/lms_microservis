@@ -9,9 +9,9 @@ import {
     getAllClasses,
     deleteClass
 } from '../controllers/class.controller';
-import { checkRole } from '../middlewares/role.middleware';
-import { authenticate } from '../middlewares/auth.middleware';
-import {upload} from '../middlewares/upload.middleware'; // <-- 1. Impor middleware untuk upload file
+import { checkRole } from 'shared/middlewares/role.middleware';
+import { authenticate } from 'shared/middlewares/auth.middleware';
+import {upload} from 'shared/middlewares/upload.middleware'; // <-- 1. Impor middleware untuk upload file
 
 const router = Router();
 

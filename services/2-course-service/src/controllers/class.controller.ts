@@ -6,7 +6,6 @@ import axios from 'axios';
 
 const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://localhost:4001/api';
 const GRADING_SERVICE_URL = process.env.GRADING_SERVICE_URL || 'http://localhost:4003/api';
-const teacherResponse = await axios.get(`${USER_SERVICE_URL}/users/${classData.teacherId}`);
 
 const prisma = new PrismaClient();
 
@@ -15,9 +14,8 @@ export const createClass = async (req: AuthRequest, res: Response): Promise<void
     try {
         const { name, description, subjectId } = req.body;
         const teacherId = req.user?.userId;
-
-        // --- PERBAIKAN DI SINI ---
-        // Hapus 'public' dari path sebelum disimpan ke database
+        
+        // Path gambar dari req.file (ini akan valid setelah tsconfig diperbaiki)
         const imageUrl = req.file ? req.file.path.replace('public', '').replace(/\\/g, '/') : null;
 
         if (!name || !subjectId || !teacherId) {
@@ -31,12 +29,11 @@ export const createClass = async (req: AuthRequest, res: Response): Promise<void
                 description,
                 teacherId,
                 subjectId: Number(subjectId),
-                imageUrl: imageUrl, // Path yang disimpan sekarang lebih bersih (misal: /uploads/materials/...)
+                imageUrl: imageUrl,
             }
         });
         res.status(201).json(newClass);
     } catch (error) {
-        // ... (blok catch tidak berubah)
         console.error("Gagal membuat kelas:", error);
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
             res.status(400).json({ message: 'ID Mata Pelajaran tidak valid.' });

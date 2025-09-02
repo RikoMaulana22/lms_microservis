@@ -1,8 +1,8 @@
 // Path: src/routes/topic.routes.ts
 import { Router } from 'express';
 import { updateTopic, deleteTopic } from '../controllers/topic.controller';
-import { checkRole } from '../middlewares/role.middleware';
-import { authenticate } from '../middlewares/auth.middleware'; // <-- 1. Impor authenticate
+import { checkRole } from 'shared/middlewares/role.middleware';
+import { authenticate } from 'shared/middlewares/auth.middleware'; // <-- 1. Impor authenticate
 
 
 const router = Router();

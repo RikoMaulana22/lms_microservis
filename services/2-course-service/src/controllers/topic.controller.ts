@@ -1,7 +1,7 @@
 // Path: src/controllers/topic.controller.ts
 import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { AuthRequest } from '../middlewares/auth.middleware';
+import { AuthRequest } from 'shared/middlewares/auth.middleware';
 
 const prisma = new PrismaClient();
 
