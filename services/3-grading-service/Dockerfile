@@ -1,50 +1,25 @@
-# Stage 1: Build the application
+# Dockerfile untuk Grading Service
+
+# ---- Stage 1: Build ----
 FROM node:18-alpine AS builder
-
-# Atur direktori kerja
-WORKDIR /app
-
-# Salin package.json dan package-lock.json
+WORKDIR /usr/src/app
 COPY package*.json ./
-
-# Instal dependensi 'shared' terlebih dahulu
-# Ini memanfaatkan caching Docker jika 'shared' tidak berubah
-COPY shared ../shared
-RUN npm install ../shared
-
-# Instal dependensi aplikasi
 RUN npm install
-
-# Salin semua file sumber
-COPY . .
-
-# Hasilkan Prisma Client
+COPY prisma ./prisma/
 RUN npx prisma generate
+COPY . .
+# RUN npm run build
 
-# Kompilasi TypeScript ke JavaScript
-RUN npm run build
-
-# Stage 2: Production environment
+# ---- Stage 2: Production ----
 FROM node:18-alpine
-
-WORKDIR /app
-
-# Salin package.json dan package-lock.json
+WORKDIR /usr/src/app
 COPY package*.json ./
-
-# Instal HANYA dependensi produksi
 RUN npm install --omit=dev
+COPY --from=builder /usr/src/app/src ./src
+COPY --from=builder /usr/src/app/prisma ./prisma
+COPY --from=builder /usr/src/app/node_modules/.prisma ./node_modules/.prisma
 
-# Salin hasil build dari stage 'builder'
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/public ./public
+# Ekspos port spesifik untuk grading-service
+EXPOSE 4003
 
-
-# Expose port yang digunakan oleh aplikasi
-# PORT akan ditentukan oleh environment variable di docker-compose
-EXPOSE ${PORT}
-
-# Perintah untuk menjalankan aplikasi
-CMD [ "node", "dist/index.js" ]
+CMD ["npm", "run", "dev"]
