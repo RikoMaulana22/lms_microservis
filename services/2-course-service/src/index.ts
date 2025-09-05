@@ -14,7 +14,7 @@ import { errorHandler } from 'shared/middlewares/error.middleware';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 4002; // Port khusus untuk course-service
+const PORT = process.env.PORT || 5002; // Port khusus untuk course-service
 
 // Middleware dasar
 app.use(cors());

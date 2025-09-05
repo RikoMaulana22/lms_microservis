@@ -8,7 +8,7 @@ import progressRoutes from './routes/progress.routes';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 4003;
+const PORT = process.env.PORT || 5003;
 
 app.use(cors());
 app.use(express.json());

@@ -10,6 +10,7 @@
     "prisma:generate": "prisma generate",
     "postinstall": "prisma generate",
     "seed": "npm run prisma:generate && prisma db seed"
+    
   },
   "prisma": {
     "seed": "ts-node --project prisma/tsconfig.json prisma/seed.ts"
