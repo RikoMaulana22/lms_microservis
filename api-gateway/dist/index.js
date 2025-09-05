@@ -13,7 +13,7 @@ const express_rate_limit_1 = __importDefault(require("express-rate-limit")); // 
 const http_1 = __importDefault(require("http")); // Import modul http
 // Inisialisasi aplikasi Express
 const app = (0, express_1.default)();
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 5000;
 // ==================================================================
 // MIDDLEWARE KEAMANAN & LOGGING
 // ==================================================================
@@ -32,11 +32,11 @@ app.use(limiter);
 // KONFIGURASI PROXY
 // ==================================================================
 const serviceUrls = {
-    user: process.env.USER_SERVICE_URL || 'http://localhost:4001',
-    course: process.env.COURSE_SERVICE_URL || 'http://localhost:4002',
-    grading: process.env.GRADING_SERVICE_URL || 'http://localhost:4003',
-    attendance: process.env.ATTENDANCE_SERVICE_URL || 'http://localhost:4004',
-    admin: process.env.ADMIN_SERVICE_URL || 'http://localhost:4005',
+    user: process.env.USER_SERVICE_URL || 'http://localhost:5001',
+    course: process.env.COURSE_SERVICE_URL || 'http://localhost:5002',
+    grading: process.env.GRADING_SERVICE_URL || 'http://localhost:5003',
+    attendance: process.env.ATTENDANCE_SERVICE_URL || 'http://localhost:5004',
+    admin: process.env.ADMIN_SERVICE_URL || 'http://localhost:5005',
 };
 // --- PERBAIKAN UTAMA DI SINI ---
 // Opsi proxy dengan penanganan error menggunakan event 'on'

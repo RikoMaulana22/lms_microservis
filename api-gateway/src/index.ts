@@ -10,7 +10,7 @@ import http from 'http'; // Import modul http
 
 // Inisialisasi aplikasi Express
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 5000;
 
 // ==================================================================
 // MIDDLEWARE KEAMANAN & LOGGING
@@ -34,11 +34,11 @@ app.use(limiter);
 // ==================================================================
 
 const serviceUrls = {
-  user: process.env.USER_SERVICE_URL || 'http://localhost:4001',
-  course: process.env.COURSE_SERVICE_URL || 'http://localhost:4002',
-  grading: process.env.GRADING_SERVICE_URL || 'http://localhost:4003',
-  attendance: process.env.ATTENDANCE_SERVICE_URL || 'http://localhost:4004',
-  admin: process.env.ADMIN_SERVICE_URL || 'http://localhost:4005',
+  user: process.env.USER_SERVICE_URL || 'http://localhost:5001',
+  course: process.env.COURSE_SERVICE_URL || 'http://localhost:5002',
+  grading: process.env.GRADING_SERVICE_URL || 'http://localhost:5003',
+  attendance: process.env.ATTENDANCE_SERVICE_URL || 'http://localhost:5004',
+  admin: process.env.ADMIN_SERVICE_URL || 'http://localhost:5005',
 };
 
 // --- PERBAIKAN UTAMA DI SINI ---
