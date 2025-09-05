@@ -3,12 +3,25 @@
 
 import { useState, useEffect, useCallback } from 'react';
 // ✅ PERBAIKAN: Menggunakan client yang benar untuk class-content-service
-import classContentApiClient from '@/lib/axiosClassContent'; 
+import apiClient from '@/lib/axios'; 
 import AddClassModal from '@/components/dashboard/admin/AddClassModal';
 import EditClassModal from '@/components/dashboard/admin/EditClassModal';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { ClassInfo } from '@/types';
+interface ClassInfo {
+    id: number;
+    name: string;
+    subject?: {
+        name?: string;
+        grade?: string | number;
+    } | null;
+    teacher?: {
+        fullName?: string;
+    } | null;
+    homeroomTeacher?: {
+        fullName?: string;
+    } | null;
+}
 
 export default function ClassManagementPage() {
     const [classes, setClasses] = useState<ClassInfo[]>([]);
@@ -24,7 +37,7 @@ export default function ClassManagementPage() {
             // ✅ PERBAIKAN: Endpoint disesuaikan dengan rute di class-content-service
             const url = selectedGrade ? `/classes?grade=${selectedGrade}` : `/admin/classes`;
             // ✅ PERBAIKAN: Menggunakan client yang benar
-            const response = await classContentApiClient.get(url);
+            const response = await apiClient.get(url);
             setClasses(response.data);
         } catch (error) {
             console.error("Fetch error:", error);
@@ -49,7 +62,7 @@ export default function ClassManagementPage() {
         const toastId = toast.loading('Menghapus kelas...');
         try {
             // ✅ PERBAIKAN: Menggunakan client yang benar
-            await classContentApiClient.delete(`/${classId}`);
+            await apiClient.delete(`/${classId}`);
             toast.success('Kelas berhasil dihapus.', { id: toastId });
             fetchData(); // Memuat ulang data setelah berhasil hapus
         } catch (error: any) {

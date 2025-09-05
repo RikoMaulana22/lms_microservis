@@ -5,14 +5,24 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation'; // <-- 1. Impor usePathname
 import Link from 'next/link';
 import { FaUsers, FaBook, FaChartBar, FaFileAlt, FaRss, FaSignOutAlt, FaCog, FaCalendarCheck,FaChalkboardTeacher  } from 'react-icons/fa'; // Tambahkan FaCog untuk Pengaturan
-import { User as GlobalUserType, Settings } from '@/types'; // Asumsikan Settings ada di types
+// Local fallback types (used when '@/types' is not available)
+type GlobalUserType = {
+  id: string;
+  name?: string;
+  email?: string;
+  role?: 'admin' | 'teacher' | 'student' | string;
+};
+
+type Settings = {
+  schoolName?: string;
+};
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isLoading, settings, logout } = useAuth() as { user: GlobalUserType | null, isLoading: boolean, settings: Settings | null, logout: () => void };
+  const { user, isLoading, settings, logout } = useAuth() as unknown as { user: GlobalUserType | null, isLoading: boolean, settings?: Settings | null, logout: () => void };
   const router = useRouter();
   const pathname = usePathname(); // <-- 2. Dapatkan path URL saat ini
 

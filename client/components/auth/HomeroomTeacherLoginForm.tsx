@@ -3,7 +3,7 @@
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import homeroomApiClient from '@/lib/axiosHomeroom';
+import apiClient from '@/lib/axios';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -21,7 +21,7 @@ export default function HomeroomTeacherLoginForm() {
         const toastId = toast.loading('Mencoba masuk...');
 
         try {
-            const response = await homeroomApiClient.post('/auth/login/homeroom', {
+            const response = await apiClient.post('/auth/login/homeroom', {
                 username,
                 password
             });

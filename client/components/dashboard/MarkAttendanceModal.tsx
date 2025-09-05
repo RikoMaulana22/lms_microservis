@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, FormEvent, useEffect } from 'react';
-import attendanceApiClient from '@/lib/axiosAttendance';
+import attendanceApiClient from '@/lib/axios';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
 

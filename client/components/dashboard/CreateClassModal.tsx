@@ -3,9 +3,18 @@
 'use client';
 
 import { useState, useEffect, FormEvent, useMemo } from 'react';
-import adminApiClient from '@/lib/axiosAdmin';
-import classContentApiClient from '@/lib/axiosClassContent';
-import { Subject, User } from '@/types';
+import apiClient from '@/lib/axios';
+// Local type definitions to avoid referencing a missing '@/types' module
+interface Subject {
+  id: string;
+  name: string;
+  grade: number;
+}
+interface User {
+  id: string;
+  fullName: string;
+  email?: string;
+}
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
 
@@ -44,8 +53,8 @@ export default function CreateClassModal({ isOpen, onClose, onClassCreated }: Cr
       const fetchPrerequisites = async () => {
         try {
           const [subjectsRes, teachersRes] = await Promise.all([
-            classContentApiClient.get('../subjects'), // Ambil mapel dari class-content-service
-            adminApiClient.get('/teachers') // Ambil guru dari admin-service
+            apiClient.get('../subjects'), // Ambil mapel dari class-content-service
+            apiClient.get('/teachers') // Ambil guru dari admin-service
           ]);
           setAllSubjects(subjectsRes.data);
           setTeachers(teachersRes.data);
@@ -92,7 +101,7 @@ export default function CreateClassModal({ isOpen, onClose, onClassCreated }: Cr
     }
 
     try {
-       await classContentApiClient.post('/', formData, {
+       await apiClient.post('/', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       toast.success('Kelas berhasil dibuat!', { id: toastId });

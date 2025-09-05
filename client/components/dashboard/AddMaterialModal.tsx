@@ -3,7 +3,7 @@
 
 import { useState, FormEvent, useEffect, useRef } from 'react';
 // ✅ BENAR: API client ini sudah benar
-import classContentApiClient from '@/lib/axiosClassContent';
+import apiClient from '@/lib/axios';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
 
@@ -59,7 +59,7 @@ export default function AddMaterialModal({ isOpen, onClose, topicId, onMaterialA
     try {
       // ✅ PERBAIKAN: Endpoint harus menunjuk ke rute materi
       // baseURL adalah '/api/classes', jadi kita butuh path relatif
-      await classContentApiClient.post('../materials', formData, {
+      await apiClient.post('../materials', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

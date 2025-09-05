@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
-import classContentApiClient from '@/lib/axiosClassContent';
+import apiClient from '@/lib/axios';
 import Link from 'next/link';
 
 import { FaChevronDown, FaChevronRight, FaFilePdf, FaClipboardList, FaArrowLeft, FaPencilAlt, FaTrash, FaCalendarCheck, FaYoutube } from 'react-icons/fa';
@@ -87,7 +87,7 @@ export default function ClassDetailPage() {
             if (classData === null) setIsLoading(true);
             setError(null);
             try {
-                const response = await classContentApiClient.get(`/${id}`);
+                const response = await apiClient.get(`/${id}`);
                 setClassData(response.data);
             } catch (err) {
                 setError('Gagal memuat data kelas.');
@@ -121,7 +121,7 @@ export default function ClassDetailPage() {
     const handleDeleteTopic = async (topicId: number) => {
         if (window.confirm('Apakah Anda yakin ingin menghapus topik ini?')) {
             try {
-                await classContentApiClient.delete(`../topics/${topicId}`);
+                await apiClient.delete(`../topics/${topicId}`);
                 toast.success('Topik berhasil dihapus.');
                 fetchData();
             } catch (error) {

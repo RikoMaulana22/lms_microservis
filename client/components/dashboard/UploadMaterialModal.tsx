@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
-import classContentApiClient from '@/lib/axiosClassContent';
+import apiClient from '@/lib/axios';
 import toast from 'react-hot-toast';
 interface UploadMaterialModalProps {
   isOpen: boolean;
@@ -40,7 +40,7 @@ export default function UploadMaterialModal({ isOpen, onClose, onUploadSuccess, 
     const toastId = toast.loading('Memproses...'); 
 
     try {
-      await classContentApiClient.post(`../materials`, formData, {
+      await apiClient.post(`../materials`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

@@ -3,7 +3,7 @@
 
 import { useState, FormEvent, useEffect } from 'react';
 // ✅ BENAR: API client ini sudah benar
-import attendanceApiClient from '@/lib/axiosAttendance';
+import apiClient from '@/lib/axios';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
 
@@ -49,7 +49,7 @@ export default function AddAttendanceModal({ isOpen, onClose, topicId, onAttenda
         closeTime: new Date(closeTime).toISOString(),
       };
       // ✅ PERBAIKAN: Endpoint untuk membuat absensi adalah '/', bukan path yang lebih panjang
-      await attendanceApiClient.post('/', payload);
+      await apiClient.post('/', payload);
       toast.success('Sesi absensi berhasil dibuat!', { id: toastId });
       onAttendanceAdded();
       onClose();

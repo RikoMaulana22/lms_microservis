@@ -3,8 +3,29 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { FaChevronDown, FaChevronRight } from 'react-icons/fa';
-import { GroupedSubjects, Subject, ClassInfo, ClassSummary } from '@/types'; // <-- Tambahkan ClassSummary
-import classContentApiClient from '@/lib/axiosClassContent'; // <-- IMPORT BARU
+// Local type definitions to avoid relying on a missing "@/types" module.
+// Extend these types as needed to match your actual project's definitions.
+type ClassInfo = {
+  id: number;
+  name: string;
+  // add other fields if needed
+};
+
+type ClassSummary = {
+  id: number;
+  name?: string;
+  // add other fields if needed
+};
+
+type Subject = {
+  id: number;
+  name: string;
+  Class?: ClassInfo[];
+};
+
+type GroupedSubjects = Record<string, Subject[]>;
+
+import apiClient from '@/lib/axios'; // <-- IMPORT BARU
 import toast from 'react-hot-toast';
 
 // Komponen Skeleton untuk accordion (tidak berubah)
@@ -41,7 +62,7 @@ const toggleSubject = (subjectId: number) => {
   const handleEnrol = async (classId: number) => {
     setEnrollingId(classId); // Menandai tombol mana yang diklik untuk loading
     try {
-      await classContentApiClient.post(`/${classId}/enroll`);
+      await apiClient.post(`/${classId}/enroll`);
       toast.success('Berhasil mendaftar ke kelas!');
       onEnrolSuccess(); // Memanggil fungsi refresh dari StudentDashboard
     } catch (error: any) {

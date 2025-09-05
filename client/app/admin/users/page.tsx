@@ -2,12 +2,19 @@
 'use client';
 
 import { useState, useEffect, useCallback, ChangeEvent } from 'react';
-import { User } from '@/types';
 import Link from 'next/link';
-import adminApiClient from '@/lib/axiosAdmin';
+import apiClient from '@/lib/axios';
 import toast from 'react-hot-toast';
 import AddUserModal from '@/components/dashboard/admin/AddUserModal';
 import EditUserModal from '@/components/dashboard/admin/EditUserModal';
+
+type User = {
+    id: number;
+    fullName: string;
+    username: string;
+    email: string;
+    role: string;
+};
 
 export default function UserManagementPage() {
     const [users, setUsers] = useState<User[]>([]);
@@ -22,7 +29,7 @@ export default function UserManagementPage() {
         setIsLoading(true);
         try {
             // ✅ PERBAIKAN: Endpoint yang benar adalah '/users', bukan '/admin/users'
-            const response = await adminApiClient.get('/users', {
+            const response = await apiClient.get('/users', {
                 params: filterRole !== 'semua' ? { role: filterRole } : {}
             });
             setUsers(response.data);
@@ -48,7 +55,7 @@ export default function UserManagementPage() {
 
         const toastId = toast.loading('Menghapus pengguna...');
         try {
-            await adminApiClient.delete(`/users/${userId}`);
+            await apiClient.delete(`/users/${userId}`);
             toast.success('Pengguna berhasil dihapus.', { id: toastId });
             fetchUsers();
         } catch (error: any) {

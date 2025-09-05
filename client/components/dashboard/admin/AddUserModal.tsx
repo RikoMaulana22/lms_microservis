@@ -4,7 +4,7 @@
 import { useState, FormEvent, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
-import adminApiClient from '@/lib/axiosAdmin';
+import apiClient from '@/lib/axios';
 
 interface AddUserModalProps {
     isOpen: boolean;
@@ -46,7 +46,7 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }: AddUserMo
             const fetchClasses = async () => {
                 try {
                     // Endpoint ini sudah benar karena admin-service me-proxy request ke class-content-service
-                    const response = await adminApiClient.get('/classes'); 
+                    const response = await apiClient.get('/classes');
                     setAvailableClasses(response.data);
                 } catch (error) {
                     toast.error("Gagal memuat daftar kelas.");
@@ -77,7 +77,7 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }: AddUserMo
             }
             
             // Endpoint ini sudah benar karena admin-service me-proxy request ke user-service
-            await adminApiClient.post('/users', payload);
+            await apiClient.post('/users', payload);
             toast.success('Pengguna baru berhasil ditambahkan!', { id: toastId });
             onUserAdded();
             handleClose();

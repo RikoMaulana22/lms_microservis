@@ -3,7 +3,7 @@
 
 import { useState, FormEvent } from 'react';
 // ✅ BENAR: API client ini sudah benar
-import classContentApiClient from '@/lib/axiosClassContent';
+import apiClient from '@/lib/axios';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast'; // ✅ TAMBAHAN: Gunakan toast untuk notifikasi
 
@@ -31,7 +31,7 @@ export default function AddTopicModal({ isOpen, onClose, classId, nextOrder, onT
     try {
       // ✅ PERBAIKAN: Endpoint sudah benar, tidak perlu diubah.
       // baseURL '/api/classes' + '/:classId/topics'
-      await classContentApiClient.post(`/${classId}/topics`, {
+      await apiClient.post(`/${classId}/topics`, {
         title,
         order: nextOrder,
       });

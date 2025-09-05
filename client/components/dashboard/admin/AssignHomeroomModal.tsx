@@ -3,11 +3,22 @@
 
 import { useState, useEffect, FormEvent } from 'react';
 // DIUBAH: Impor juga adminApiClient untuk mengambil data guru
-import homeroomApiClient from '@/lib/axiosHomeroom';
-import adminApiClient from '@/lib/axiosAdmin'; 
+import apiClient from '@/lib/axios'; 
 import toast from 'react-hot-toast';
 import Modal from '@/components/ui/Modal';
-import { User } from '@/types';
+
+export type UserRole = 'siswa' | 'guru' | 'admin' | 'wali_kelas';
+
+export interface User {
+  id: number;
+  fullName: string;
+  username: string; // sekarang sudah ada
+  role: UserRole;
+  email: string;
+  createdAt?: string;
+  nisn?: string | null;        // opsional
+  homeroomClassId?: number;    // opsional
+}
 
 interface AssignHomeroomModalProps {
     isOpen: boolean;
@@ -26,7 +37,7 @@ export default function AssignHomeroomModal({ isOpen, onClose, onSuccess, select
             const fetchTeachers = async () => {
                 try {
                     // DIUBAH: Menggunakan adminApiClient untuk mengambil daftar semua guru
-                    const res = await adminApiClient.get('/teachers');
+                    const res = await apiClient.get('/teachers');
                     setTeachers(res.data);
                 } catch (error) {
                     toast.error("Gagal memuat daftar guru.");
@@ -49,7 +60,7 @@ export default function AssignHomeroomModal({ isOpen, onClose, onSuccess, select
 
         try {
             // INI SUDAH BENAR: Menggunakan homeroomApiClient untuk menetapkan wali kelas
-            await homeroomApiClient.put(`/admin/classes/${selectedClass?.id}/assign-homeroom`, {
+            await apiClient.put(`/admin/classes/${selectedClass?.id}/assign-homeroom`, {
                 // DIUBAH: Pastikan ID dikirim sebagai angka
                 teacherId: parseInt(selectedTeacherId, 10) 
             });

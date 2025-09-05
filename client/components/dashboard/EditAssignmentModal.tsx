@@ -1,45 +1,63 @@
+// Path: client/components/dashboard/admin/EditAssignmentModal.tsx
+
 'use client';
 
-import { useState, useEffect, FormEvent } from 'react';
-import assignmentApiClient from '@/lib/axiosAssignment';
+import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
+import apiClient from '@/lib/axios';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
-import { AssignmentDetails, AssignmentType } from '@/types'; 
+
+// Gunakan tipe yang sudah ada jika tersedia, atau definisikan di sini
+type AssignmentType = 'pilgan' | 'esai' | 'link_google';
+
+interface AssignmentDetails {
+  id: string | number;
+  title: string;
+  type: AssignmentType;
+  externalUrl?: string;
+  // Pastikan tipe dueDate konsisten
+  dueDate?: string | null; 
+}
 
 interface EditAssignmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAssignmentUpdated: () => void;
-  assignment: AssignmentDetails | null; // Data tugas yang akan diedit
+  assignment: AssignmentDetails | null;
 }
 
 export default function EditAssignmentModal({ isOpen, onClose, onAssignmentUpdated, assignment }: EditAssignmentModalProps) {
     const [formData, setFormData] = useState<Partial<AssignmentDetails>>({});
 
     useEffect(() => {
-        // Isi form dengan data tugas yang ada saat modal dibuka
+        // Isi form dengan data tugas saat modal dibuka atau data assignment berubah
         if (assignment) {
             setFormData({
                 ...assignment,
+                // Format tanggal agar sesuai dengan input type="date" (YYYY-MM-DD)
                 dueDate: assignment.dueDate ? new Date(assignment.dueDate).toISOString().substring(0, 10) : '',
             });
         }
     }, [assignment]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setFormData((prev: Partial<AssignmentDetails>) => ({ ...prev, [e.target.name]: e.target.value }));
+    // Fungsi untuk menangani perubahan pada setiap input form
+    const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    // Fungsi yang akan dijalankan saat form di-submit
     const handleSubmit = async (e: FormEvent) => {
-        e.preventDefault();
+        e.preventDefault(); // Mencegah reload halaman
         if (!assignment) return;
-        
+
         const loadingToast = toast.loading("Menyimpan perubahan...");
         try {
-            await assignmentApiClient.put(`/assignments/${assignment.id}`, formData);
+            // Mengirim data yang sudah diupdate ke API
+            await apiClient.put(`/assignments/${assignment.id}`, formData);
             toast.success("Tugas berhasil diperbarui.", { id: loadingToast });
-            onAssignmentUpdated();
-            onClose();
+            onAssignmentUpdated(); // Memuat ulang data di halaman utama
+            onClose(); // Menutup modal
         } catch (err: any) {
             toast.error(err.response?.data?.message || "Gagal memperbarui tugas.", { id: loadingToast });
         }

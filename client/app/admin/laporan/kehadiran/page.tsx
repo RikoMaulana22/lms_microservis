@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 // ✅ BENAR: Menggunakan adminApiClient sudah tepat untuk laporan.
-import adminApiClient from '@/lib/axiosAdmin';
+import apiClient from '@/lib/axios';
 import toast from 'react-hot-toast'; // Impor toast untuk notifikasi error
 
 // Tipe data sudah benar
@@ -28,7 +28,7 @@ export default function AttendanceReportPage() {
             // ✅ PANGGILAN API INI SUDAH BENAR
             // admin-service bertindak sebagai gateway untuk mengumpulkan data laporan
             // dari berbagai layanan lain, termasuk attendance-service.
-            const response = await adminApiClient.get(`/reports/attendance`);
+            const response = await apiClient.get(`/reports/attendance`);
             setReportData(response.data);
         } catch (error) {
             toast.error("Gagal memuat laporan kehadiran."); // Menggunakan toast untuk notifikasi

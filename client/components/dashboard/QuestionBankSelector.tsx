@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
 import { FaSearch, FaPlus } from 'react-icons/fa';
-import assignmentApiClient from '@/lib/axiosAssignment'; // Pastikan ini diimpor
+import apiClient from '@/lib/axios'; // Pastikan ini diimpor
 import toast from 'react-hot-toast'; // Impor toast untuk notifikasi error
 
 // Tipe data Question (harus sama dengan di AddAssignmentModal)
@@ -34,7 +34,7 @@ export default function QuestionBankSelector({ isOpen, onClose, onSelect, previo
       setIsLoading(true);
       try {
         // --- PERUBAHAN UTAMA: Panggil API di sini ---
-        const response = await assignmentApiClient.get('../question-banks');
+        const response = await apiClient.get('../question-banks');
         setAllQuestions(response.data);
         // ------------------------------------------
       } catch (error) {

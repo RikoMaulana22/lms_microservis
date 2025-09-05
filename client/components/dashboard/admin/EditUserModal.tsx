@@ -1,11 +1,22 @@
 'use client';
 
 import { useState, FormEvent, useEffect } from 'react';
-import adminApiClient from '@/lib/axiosAdmin';
+import apiClient from '@/lib/axios';
 import Modal from '@/components/ui/Modal';
-import { User } from '@/types';
 import toast from 'react-hot-toast';
 
+export type UserRole = 'siswa' | 'guru' | 'admin' | 'wali_kelas';
+
+export interface User {
+  id: number;
+  fullName: string;
+  username: string; // sekarang sudah ada
+  role: UserRole;
+  email: string;
+  createdAt?: string;
+  nisn?: string | null;        // opsional
+  homeroomClassId?: number;    // opsional
+}
 interface EditUserModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -46,7 +57,7 @@ export default function EditUserModal({ isOpen, onClose, user, onUserUpdated }: 
         if (isOpen && formData.role === 'wali_kelas') {
             const fetchClasses = async () => {
                 try {
-                    const response = await adminApiClient.get('/classes');
+                    const response = await apiClient.get('/classes');
                     setAvailableClasses(response.data);
                 } catch (error) {
                     toast.error("Gagal memuat daftar kelas.");
@@ -89,7 +100,7 @@ export default function EditUserModal({ isOpen, onClose, user, onUserUpdated }: 
             }
 
             // Pemanggilan API ini sudah benar
-            await adminApiClient.put(`/users/${user.id}`, payload);
+            await apiClient.put(`/users/${user.id}`, payload);
             toast.success('Data berhasil diperbarui!', { id: loadingToast });
             onUserUpdated();
             onClose();

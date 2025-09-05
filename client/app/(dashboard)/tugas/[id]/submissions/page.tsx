@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import assignmentApiClient from '@/lib/axiosAssignment';
+import apiClient from '@/lib/axios';
 import GradeSubmissionModal from '@/components/dashboard/GradeSubmissionModal';
 import { FaArrowLeft, FaEdit } from 'react-icons/fa';
 import toast from 'react-hot-toast'; // ✅ TAMBAHAN: Impor toast untuk notifikasi error
@@ -36,7 +36,7 @@ export default function SubmissionsPage() {
         setIsLoading(true);
 
         // ✅ PERBAIKAN: Hapus duplikasi path '/assignments'
-        assignmentApiClient.get(`/${assignmentId}/submissions`)
+        apiClient.get(`/${assignmentId}/submissions`)
             .then(response => setData(response.data))
             .catch(error => {
                 toast.error("Gagal memuat data pengumpulan."); // Gunakan toast

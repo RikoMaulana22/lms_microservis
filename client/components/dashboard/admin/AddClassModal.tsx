@@ -2,12 +2,33 @@
 
 import { useState, useEffect, FormEvent } from 'react';
 // DIUBAH: Impor client yang benar untuk class-content-service
-import adminApiClient from '@/lib/axiosAdmin';
-import classContentApiClient from '@/lib/axiosClassContent';
+import apiClient from '@/lib/axios';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
-import { Teacher, Subject } from '@/types';
 
+
+export interface Teacher { 
+  id: number; 
+  fullName: string; 
+}
+export interface Subject {
+  id: number;
+  name: string;
+  grade: number;
+  Class: ClassInfo[]; 
+}
+
+export interface ClassInfo {
+  id: number;
+  name: string;
+  description?: string;
+  subject: Subject;
+  teacher: Teacher;             // pengajar utama
+  homeroomTeacher?: Teacher;    // wali kelas opsional
+  _count?: {
+    members?: number;
+  };
+}
 interface AddClassModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -37,10 +58,10 @@ export default function AddClassModal({ isOpen, onClose, onClassCreated }: AddCl
                 try {
                     // DIUBAH: Memanggil layanan yang benar untuk setiap data
                     const [teachersRes, subjectsRes] = await Promise.all([
-                        adminApiClient.get('/teachers'), // Data guru dari admin-service
+                        apiClient.get('/teachers'), // Data guru dari admin-service
                         // Data mapel dari class-content-service.
                         // AxiosClassContent base URL adalah '/api/classes', jadi kita perlu ke '../subjects'
-                        classContentApiClient.get('/subjects')
+                        apiClient.get('/subjects')
                     ]);
                     setTeachers(teachersRes.data);
                     setSubjects(subjectsRes.data);
@@ -65,8 +86,8 @@ export default function AddClassModal({ isOpen, onClose, onClassCreated }: AddCl
         const toastId = toast.loading("Menambahkan kelas...");
         try {
             // DIUBAH: Menggunakan client dan endpoint yang benar untuk membuat kelas
-            // Endpointnya adalah '/' karena baseURL dari classContentApiClient sudah '/api/classes'
-            await classContentApiClient.post('/classes', {
+            // Endpointnya adalah '/' karena baseURL dari apiClient sudah '/api/classes'
+            await apiClient.post('/classes', {
                 name,
                 description,
                 // Pastikan ID dikirim sebagai angka jika backend mengharapkannya

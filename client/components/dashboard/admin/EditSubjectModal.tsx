@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, FormEvent, useEffect } from 'react';
-import classContentApiClient from '@/lib/axiosClassContent';
+import apiClient from '@/lib/axios';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
 
@@ -43,7 +43,7 @@ export default function EditSubjectModal({ isOpen, onClose, subject, onSubjectUp
         const loadingToast = toast.loading('Memperbarui data...');
         try {
             // ✅ PERBAIKAN: Menggunakan endpoint yang benar dan mengirim grade sebagai angka
-            await classContentApiClient.put(`../subjects/${subject.id}`, {
+            await apiClient.put(`../subjects/${subject.id}`, {
                 name: formData.name,
                 grade: parseInt(formData.grade, 10),
             });

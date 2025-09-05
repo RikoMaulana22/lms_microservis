@@ -3,7 +3,7 @@
 
 import { useState, FormEvent, useEffect, useCallback } from 'react';
 // ✅ PERBAIKAN: Ganti adminApiClient dengan classContentApiClient
-import classContentApiClient from '@/lib/axiosClassContent';
+import apiClient from '@/lib/axios';
 import toast from 'react-hot-toast'; // ✅ TAMBAHAN: Impor toast
 import { FaFilePdf, FaTrash } from 'react-icons/fa';
 
@@ -28,7 +28,7 @@ export default function ManageGlobalMaterialsPage() {
         try {
             // ✅ PERBAIKAN: Gunakan client yang benar dan sesuaikan endpoint
             // baseURL '/api/classes' + '../materials/global' -> '/api/materials/global'
-            const response = await classContentApiClient.get(`../materials/global`);
+            const response = await apiClient.get(`../materials/global`);
             setMaterials(response.data);
         } catch (error) {
             toast.error("Gagal memuat materi global.");
@@ -57,7 +57,7 @@ export default function ManageGlobalMaterialsPage() {
         const toastId = toast.loading('Mengunggah materi...');
         try {
             // ✅ PERBAIKAN: Gunakan client yang benar dan sesuaikan endpoint
-            await classContentApiClient.post('../materials/global', formData, {
+            await apiClient.post('../materials/global', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
             toast.success('Materi berhasil diunggah!', { id: toastId });
@@ -80,7 +80,7 @@ export default function ManageGlobalMaterialsPage() {
             const toastId = toast.loading('Menghapus materi...');
             try {
                 // ✅ PERBAIKAN: Gunakan client yang benar dan sesuaikan endpoint
-                await classContentApiClient.delete(`../materials/global/${materialId}`);
+                await apiClient.delete(`../materials/global/${materialId}`);
                 toast.success('Materi berhasil dihapus.', { id: toastId });
                 fetchData();
             } catch (error: any) {

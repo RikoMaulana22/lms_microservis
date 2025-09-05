@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, FormEvent } from 'react';
-import adminApiClient from '@/lib/axiosAdmin';
+import apiClient from '@/lib/axios';
 import toast from 'react-hot-toast'; // ✅ TAMBAHAN: Impor toast
 
 interface Settings {
@@ -20,7 +20,7 @@ export default function SettingsPage() {
         try {
             // ✅ PERBAIKAN: Gunakan path relatif untuk mengakses endpoint /api/settings
             // baseURL '/api/admin' + '../settings' -> '/api/settings'
-            const response = await adminApiClient.get('../settings');
+            const response = await apiClient.get('/settings');
             setSettings(response.data);
         } catch (error) {
             toast.error("Gagal memuat pengaturan.");
@@ -45,7 +45,7 @@ export default function SettingsPage() {
         const toastId = toast.loading('Menyimpan pengaturan...');
         try {
             // ✅ PERBAIKAN: Gunakan path relatif untuk mengakses endpoint /api/settings
-            await adminApiClient.post('../settings', settings);
+            await apiClient.post('/settings', settings);
             toast.success('Pengaturan berhasil disimpan!', { id: toastId });
         } catch (error: any) {
             toast.error(error.response?.data?.message || 'Gagal menyimpan pengaturan.', { id: toastId });

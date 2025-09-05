@@ -1,21 +1,70 @@
-// client/components/dashboard/TeacherDashboard.tsx
-
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-
-// --- PERUBAHAN UTAMA: Impor semua klien Axios yang relevan ---
-import classContentApiClient from '@/lib/axiosClassContent';
-import announcementApiClient from '@/lib/axiosAnnouncement'; // Pastikan file ini ada
-import scheduleApiClient from '@/lib/axiosSchedule';       // Pastikan file ini ada
-
+import apiClient from '@/lib/axios';
+import toast from 'react-hot-toast';
 import CreateClassModal from './CreateClassModal';
-import { User, ClassSummary, Announcement, GlobalMaterial, ScheduleItem } from '@/types';
 import AnnouncementSection from './AnnouncementSection';
 import GlobalMaterialsSection from './GlobalMaterialsSection';
 import TodayScheduleSection from './TodayScheduleSection';
+export type UserRole = 'siswa' | 'guru' | 'admin' | 'wali_kelas';
 
+export interface GlobalMaterial {
+  id: number;
+  title: string;
+  fileUrl: string;
+}
+export interface ClassSummary {
+  id: number;
+  name: string;
+  description: string | null;
+  imageUrl?: string | null; 
+  subject: {
+    name: string;
+  };
+  Teacher: {
+    fullName: string;
+    id: number;
+  };
+  _count: {
+    members: number;
+  };
+}
+
+export interface User {
+  id: number;
+  fullName: string;
+  username: string; // sekarang sudah ada
+  role: UserRole;
+  email: string;
+  createdAt?: string;
+  nisn?: string | null;        // opsional
+  homeroomClassId?: number;    // opsional
+}
+
+export interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: string;
+  author: {
+    fullName: string;
+  };
+}
+
+
+
+// Definisikan tipe untuk jadwal karena belum ada di shared/types
+// (Jika sudah ada, impor dari @shared/types)
+export interface ScheduleItem {
+  id: number;
+  dayOfWeek: string;
+  startTime: string;
+  endTime: string;
+  subject: { name: string };
+  class: { id?: number; name: string };
+}
 
 export default function TeacherDashboard({ user }: { user: User }) {
   const [myClasses, setMyClasses] = useState<ClassSummary[]>([]);
@@ -25,7 +74,8 @@ export default function TeacherDashboard({ user }: { user: User }) {
   const [globalMaterials, setGlobalMaterials] = useState<GlobalMaterial[]>([]);
   const [mySchedules, setMySchedules] = useState<ScheduleItem[]>([]);
 
-  const fetchData = useCallback(async () => {
+  // Fungsi untuk mengambil semua data, bisa dipanggil ulang
+  const fetchAllData = async () => {
     setIsLoading(true);
     try {
       const [
@@ -34,11 +84,10 @@ export default function TeacherDashboard({ user }: { user: User }) {
         globalMaterialsResponse,
         schedulesResponse
       ] = await Promise.all([
-        // --- PERUBAHAN UTAMA: Gunakan klien yang benar untuk setiap panggilan ---
-        classContentApiClient.get('/classes/teacher'),
-        announcementApiClient.get('/announcements'),
-        classContentApiClient.get('/materials/global'),
-        scheduleApiClient.get('/schedules/my')
+        apiClient.get('/classes/teacher'),
+        apiClient.get('/announcements'),
+        apiClient.get('/materials/global'),
+        apiClient.get('/schedules/my')
       ]);
 
       setMyClasses(myClassesResponse.data);
@@ -47,36 +96,36 @@ export default function TeacherDashboard({ user }: { user: User }) {
       setMySchedules(schedulesResponse.data);
     } catch (error) {
       console.error('Gagal mengambil data dashboard guru:', error);
+      toast.error('Gagal memuat data dashboard.');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  };
 
+  // PERBAIKAN: useEffect yang lebih sederhana untuk fetch data awal
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchAllData();
+  }, []); // Dependensi kosong agar hanya berjalan sekali saat komponen dimuat
 
-  const handleEditClass = (classId: string) => {
+  const handleEditClass = (classId: number) => {
     console.log('Edit kelas dengan ID:', classId);
     // TODO: Implementasi modal edit atau redirect ke halaman edit
+    toast.error('Fitur edit belum diimplementasikan.');
   };
 
-  const handleDeleteClass = async (classId: string) => {
-    const confirmDelete = confirm('Apakah Anda yakin ingin menghapus kelas ini?');
-    if (!confirmDelete) return;
+  const handleDeleteClass = async (classId: number) => {
+    if (!window.confirm('Apakah Anda yakin ingin menghapus kelas ini? Ini tidak dapat diurungkan.')) return;
 
+    const toastId = toast.loading('Menghapus kelas...');
     try {
-      // --- PERUBAHAN UTAMA: Gunakan klien yang benar untuk menghapus kelas ---
-      await classContentApiClient.delete(`/classes/${classId}`);
-      fetchData(); // Refresh data setelah penghapusan
-    } catch (error) {
+      await apiClient.delete(`/classes/${classId}`);
+      toast.success('Kelas berhasil dihapus.', { id: toastId });
+      fetchAllData(); // Refresh data setelah berhasil menghapus
+    } catch (error: any) {
       console.error('Gagal menghapus kelas:', error);
-      alert('Gagal menghapus kelas. Silakan coba lagi.');
+      toast.error(error.response?.data?.message || 'Gagal menghapus kelas.', { id: toastId });
     }
   };
-
-  const backendUrl = process.env.NEXT_PUBLIC_API_URL_CLASS_CONTENT?.replace('/api', '') || 'http://localhost:5002';
-
 
   return (
     <>
@@ -87,7 +136,10 @@ export default function TeacherDashboard({ user }: { user: User }) {
             <h1 className="text-3xl font-bold">Dashboard Guru</h1>
             <p className="text-gray-600">Selamat datang kembali, {user.fullName}!</p>
           </div>
-          
+          {/* Tambahkan tombol untuk membuka modal */}
+          <button onClick={() => setIsModalOpen(true)} className="btn-primary">
+            + Buat Kelas Baru
+          </button>
         </div>
 
         {/* Sections */}
@@ -105,15 +157,13 @@ export default function TeacherDashboard({ user }: { user: User }) {
               {myClasses.length > 0 ? (
                 myClasses.map((cls) => (
                   <div key={cls.id} className="border rounded-lg overflow-hidden hover:shadow-lg transition-all flex flex-col">
-                    {/* Bagian Gambar */}
                     <div className="h-32 bg-gray-200 flex items-center justify-center">
-                       {cls.imageUrl ? (
-                         <img src={`${backendUrl}${cls.imageUrl}`} alt={cls.name} className="h-full w-full object-cover"/>
-                       ) : (
-                         <span className="text-gray-400 text-sm">Tidak Ada Gambar</span>
-                       )}
+                      {cls.imageUrl ? (
+                        <img src={cls.imageUrl} alt={cls.name} className="h-full w-full object-cover"/>
+                      ) : (
+                        <span className="text-gray-400 text-sm">Tidak Ada Gambar</span>
+                      )}
                     </div>
-                    {/* Bagian Teks */}
                     <div className="p-4 flex flex-col justify-between flex-grow">
                       <div>
                         <Link href={`/kelas/${cls.id}`}>
@@ -123,10 +173,9 @@ export default function TeacherDashboard({ user }: { user: User }) {
                         <p className="text-sm mt-2 font-semibold text-gray-700">{cls._count.members} Siswa</p>
                       </div>
                     </div>
-                    {/* Bagian Tombol Edit/Hapus */}
                     <div className="p-4 border-t flex gap-4">
-                      <button onClick={() => handleEditClass(cls.id.toString())} className="text-blue-600 hover:underline text-sm">Edit</button>
-                      <button onClick={() => handleDeleteClass(cls.id.toString())} className="text-red-600 hover:underline text-sm">Hapus</button>
+                      <button onClick={() => handleEditClass(cls.id)} className="text-blue-600 hover:underline text-sm">Edit</button>
+                      <button onClick={() => handleDeleteClass(cls.id)} className="text-red-600 hover:underline text-sm">Hapus</button>
                     </div>
                   </div>
                 ))
@@ -142,7 +191,7 @@ export default function TeacherDashboard({ user }: { user: User }) {
       <CreateClassModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onClassCreated={fetchData}
+        onClassCreated={fetchAllData} // Refresh data setelah membuat kelas
       />
     </>
   );

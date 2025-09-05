@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import scheduleApiClient from '@/lib/axiosSchedule'; // <-- Impor apiClient
+import apiClient from '@/lib/axios'; // <-- Impor apiClient
 import toast from 'react-hot-toast'; // <-- Impor toast
 import ScheduleModal from '@/components/schedule/ScheduleModal'; // <-- Impor modal baru
 import Image from 'next/image'; // <-- Tambahkan impor Image dari next/image
@@ -16,7 +16,7 @@ export default function HomePage() {
     const handleShowSchedule = async () => {
         setIsLoadingSchedule(true);
         try {
-            const response = await scheduleApiClient.get(`/schedules/public`);
+            const response = await apiClient.get(`/schedules/public`);
             setScheduleData(response.data);
             setIsScheduleModalOpen(true);
         } catch (error) {

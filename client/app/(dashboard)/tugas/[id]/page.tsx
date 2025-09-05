@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, FormEvent } from 'react';
 import { useParams, useRouter, notFound } from 'next/navigation';
 import Link from 'next/link';
-import assignmentApiClient from '@/lib/axiosAssignment';
+import apiClient from '@/lib/axios';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import QuizTimer from '@/components/quiz/QuizTimer'; // Impor komponen timer
@@ -62,7 +62,7 @@ export default function AssignmentPage() {
     if (!assignmentId) return;
     setIsLoading(true);
     try {
-      const response = await assignmentApiClient.get(`/${assignmentId}`);
+      const response = await apiClient.get(`/${assignmentId}`);
       setAssignment(response.data);
       setStartTime(new Date());
     } catch (err) {
@@ -109,7 +109,7 @@ export default function AssignmentPage() {
       };
 
       try {
-        const response = await assignmentApiClient.post(`/assignments/submissions/assignment/${assignmentId}`, payload);
+        const response = await apiClient.post(`/assignments/submissions/assignment/${assignmentId}`, payload);
 
         toast.success(response.data.message || "Jawaban berhasil dikumpulkan!", { id: toastId });
 

@@ -2,13 +2,28 @@
 
 import { useState, useEffect, FormEvent, useCallback } from 'react';
 // Impor kedua API client yang dibutuhkan
-import classContentApiClient from '@/lib/axiosClassContent';
-import scheduleApiClient from '@/lib/axiosSchedule';
-import adminApiClient from '@/lib/axiosAdmin'; // Diperlukan untuk mengambil semua guru
+import apiClient from '@/lib/axios';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
-import { Subject } from '@/types';
 
+export interface Subject {
+  id: number;
+  name: string;
+  grade: number;
+  Class: ClassInfo[];
+}
+
+export interface ClassInfo {
+  id: number;
+  name: string;
+  description?: string;
+  subject: Subject;
+  teacher: Teacher;             // pengajar utama
+  homeroomTeacher?: Teacher;    // wali kelas opsional
+  _count?: {
+    members?: number;
+  };
+}
 // Define clearer interfaces for the data
 interface Class {
     id: number;
@@ -46,11 +61,11 @@ export default function AddScheduleModal({ isOpen, onClose, onScheduleAdded }: A
     const fetchDropdownData = useCallback(async () => {
         try {
             // DIUBAH: Menggunakan client dan endpoint yang benar untuk setiap data
-            const classPromise = classContentApiClient.get('/all'); // Benar
+            const classPromise = apiClient.get('/all'); // Benar
             // Ambil daftar guru dari admin-service karena itu sumber utamanya
-            const teacherPromise = adminApiClient.get('/teachers');
+            const teacherPromise = apiClient.get('/teachers');
             // Ambil daftar mapel dari class-content-service
-            const subjectPromise = classContentApiClient.get('../subjects');
+            const subjectPromise = apiClient.get('../subjects');
 
             const [classRes, teacherRes, subjectRes] = await Promise.all([
                 classPromise,
@@ -86,7 +101,7 @@ export default function AddScheduleModal({ isOpen, onClose, onScheduleAdded }: A
         try {
             // DIUBAH: Endpoint untuk POST jadwal adalah '/', bukan '/schedules'
             // karena baseURL sudah mengandung '/api/schedules'
-            await scheduleApiClient.post('/', {
+            await apiClient.post('/', {
                 ...formData,
                 classId: parseInt(formData.classId),
                 subjectId: parseInt(formData.subjectId),

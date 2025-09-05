@@ -1,84 +1,107 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import classContentApiClient from '@/lib/axiosClassContent';
-import announcementApiClient from '@/lib/axiosAnnouncement';
-import scheduleApiClient from '@/lib/axiosSchedule';
-import { User, ClassSummary, GroupedSubjects, Announcement, GlobalMaterial, ScheduleItem } from '@/types';
-import MyClassesSection from './MyClassesSection';
-import ClassBrowserSection from './ClassBrowserSection';
-import AnnouncementSection from './AnnouncementSection';
-import GlobalMaterialsSection from './GlobalMaterialsSection';
-import TodayScheduleSection from './TodayScheduleSection';
+import { useState, useEffect } from 'react';
+import apiClient from '@/lib/axios';
 
-export default function StudentDashboard({ user }: { user: User }) {
-  // State untuk semua data yang akan ditampilkan
-  const [myClasses, setMyClasses] = useState<ClassSummary[]>([]);
-  const [groupedSubjects, setGroupedSubjects] = useState<GroupedSubjects>({});
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [globalMaterials, setGlobalMaterials] = useState<GlobalMaterial[]>([]);
-  const [mySchedules, setMySchedules] = useState<ScheduleItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+// PERBAIKAN: Impor tipe data dari shared/types untuk konsistensi
 
-  // Fungsi untuk mengambil semua data secara bersamaan
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const myClassesPromise = classContentApiClient.get(`/classes/student`);
-      const groupedSubjectsPromise = classContentApiClient.get(`/subjects/grouped`);
-      const announcementsPromise = announcementApiClient.get(`/announcements`);
-      const globalMaterialsPromise = classContentApiClient.get(`/materials/global`);
-      const schedulePromise = scheduleApiClient.get(`/schedules/my`);
-
-      const [
-        myClassesResponse, 
-        groupedSubjectsResponse, 
-        announcementsResponse, 
-        globalMaterialsResponse,
-        schedulesResponse
-      ] = await Promise.all([
-        myClassesPromise,
-        groupedSubjectsPromise,
-        announcementsPromise,
-        globalMaterialsPromise,
-        schedulePromise,
-      ]);
-
-      setMyClasses(myClassesResponse.data);
-      setGroupedSubjects(groupedSubjectsResponse.data);
-      setAnnouncements(announcementsResponse.data);
-      setGlobalMaterials(globalMaterialsResponse.data);
-      setMySchedules(schedulesResponse.data);
-
-    } catch (error) {
-      console.error("Gagal mengambil data dashboard siswa:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  return (
-    <div className="container mx-auto p-4 md:p-8 space-y-8 text-gray-800">
-      <h1 className="text-3xl  font-bold">Dashboard Siswa</h1>
-      <p className="text-gray-600">Selamat datang, {user.fullName}!</p>
-      
-      {/* Tampilkan semua section baru */}
-      <AnnouncementSection isLoading={isLoading} announcements={announcements} />
-      <TodayScheduleSection isLoading={isLoading} schedules={mySchedules} />
-      <GlobalMaterialsSection isLoading={isLoading} materials={globalMaterials} />
-      
-      {/* Section yang sudah ada sebelumnya */}
-      <MyClassesSection isLoading={isLoading} myClasses={myClasses} />
-      <ClassBrowserSection 
-        isLoading={isLoading} 
-        groupedSubjects={groupedSubjects} 
-        myClasses={myClasses}
-        onEnrolSuccess={fetchData} 
-      />
-    </div>
-  );
+export interface GlobalMaterial {
+  id: number;
+  title: string;
+  fileUrl: string;
 }
+export interface Announcement {
+  id: number;
+  title: string;
+  content: string;
+  createdAt: string;
+  author: {
+    fullName: string;
+  };
+}
+
+export interface ClassSummary {
+  id: number;
+  name: string;
+  description: string | null;
+  imageUrl?: string | null; 
+  subject: {
+    name: string;
+  };
+  Teacher: {
+    fullName: string;
+    id: number;
+  };
+  _count: {
+    members: number;
+  };
+}
+
+// Definisikan tipe untuk jadwal karena belum ada di shared/types
+type ScheduleItem = { 
+    id: string | number; 
+    className: string; 
+    startTime: string; 
+    endTime: string;
+};
+export interface ClassInfo {
+  id: number;
+  name: string;
+  description?: string;
+  subject: Subject;
+  teacher: Teacher;             // pengajar utama
+  homeroomTeacher?: Teacher;    // wali kelas opsional
+  _count?: {
+    members?: number;
+  };
+}
+
+export interface Teacher { 
+  id: number; 
+  fullName: string; 
+}
+export interface Subject {
+  id: number;
+  name: string;
+  grade: number;
+  Class: ClassInfo[]; 
+}
+
+export type GroupedSubjects = Record<string, Subject[]>;
+
+async function fetchAllData(): Promise<{
+  myClasses: ClassSummary[];
+  groupedSubjects: GroupedSubjects;
+  announcements: Announcement[];
+  globalMaterials: GlobalMaterial[];
+  schedules: ScheduleItem[];
+}> {
+  try {
+    const [
+      myClassesResponse,
+      groupedSubjectsResponse,
+      announcementsResponse,
+      globalMaterialsResponse,
+      schedulesResponse
+    ] = await Promise.all([
+      apiClient.get(`/classes/student`),
+      apiClient.get(`/subjects/grouped`),
+      apiClient.get(`/announcements`),
+      apiClient.get(`/materials/global`),
+      apiClient.get(`/schedules/my`),
+    ]);
+
+    return {
+      myClasses: myClassesResponse.data,
+      groupedSubjects: groupedSubjectsResponse.data,
+      announcements: announcementsResponse.data,
+      globalMaterials: globalMaterialsResponse.data,
+      schedules: schedulesResponse.data,
+    };
+  } catch (error) {
+    console.error('Failed to fetch all dashboard data:', error);
+    throw error;
+  }
+}
+
+// duplicate placeholder removed because the async fetchAllData implementation is defined above

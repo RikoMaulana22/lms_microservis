@@ -1,11 +1,15 @@
-// Path: client/components/dashboard/EditTopicModal.tsx
 'use client';
 
 import { useState, FormEvent, useEffect } from 'react';
-import classContentApiClient from '@/lib/axiosClassContent';
+import apiClient from '@/lib/axios';
 import Modal from '@/components/ui/Modal';
-import { TopicInfo } from '@/types'; // Asumsikan tipe ini ada
 import toast from 'react-hot-toast';
+
+// Definisikan tipe data untuk Topic
+type TopicInfo = {
+  id: string | number;
+  title: string;
+};
 
 interface EditTopicModalProps {
   isOpen: boolean;
@@ -17,27 +21,30 @@ interface EditTopicModalProps {
 export default function EditTopicModal({ isOpen, onClose, topic, onTopicUpdated }: EditTopicModalProps) {
   const [title, setTitle] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  // Isi form dengan judul topik saat ini ketika modal dibuka
+  // Mengisi form dengan judul topik saat ini ketika modal dibuka atau data topik berubah
   useEffect(() => {
     if (topic) {
       setTitle(topic.title);
     }
   }, [topic]);
 
+  // Fungsi untuk menangani submit form
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+    e.preventDefault(); // Mencegah halaman refresh
     if (!topic) return;
 
     setIsLoading(true);
-    setError(null);
+    const loadingToast = toast.loading('Menyimpan perubahan...');
+
     try {
-      await classContentApiClient.put(`../topics/${topic.id}`, { title });
-      onTopicUpdated();
-      onClose();
+      // Mengirim data yang diperbarui ke API
+      await apiClient.put(`/topics/${topic.id}`, { title });
+      toast.success('Topik berhasil diperbarui.', { id: loadingToast });
+      onTopicUpdated(); // Memuat ulang data di halaman utama
+      onClose(); // Menutup modal
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Gagal mengupdate topik.');
+      toast.error(err.response?.data?.message || 'Gagal mengupdate topik.', { id: loadingToast });
     } finally {
       setIsLoading(false);
     }
@@ -46,7 +53,6 @@ export default function EditTopicModal({ isOpen, onClose, topic, onTopicUpdated 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Edit Topik">
       <form onSubmit={handleSubmit}>
-        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
         <div className="mb-4">
           <label htmlFor="topic-title-edit" className="block text-sm font-medium">Judul Topik</label>
           <input
@@ -59,8 +65,8 @@ export default function EditTopicModal({ isOpen, onClose, topic, onTopicUpdated 
           />
         </div>
         <div className="flex justify-end gap-4 mt-6">
-          <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-lg">Batal</button>
-          <button type="submit" disabled={isLoading} className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg">
+          <button type="button" onClick={onClose} className="btn-secondary">Batal</button>
+          <button type="submit" disabled={isLoading} className="btn-primary">
             {isLoading ? 'Menyimpan...' : 'Simpan Perubahan'}
           </button>
         </div>

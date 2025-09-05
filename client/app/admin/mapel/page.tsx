@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 // ✅ PERBAIKAN: Ganti adminApiClient dengan classContentApiClient
-import classContentApiClient from '@/lib/axiosClassContent';
+import apiClient from '@/lib/axios';
 import toast from 'react-hot-toast';
 import AddSubjectModal from '@/components/dashboard/admin/AddSubjectModal';
 import EditSubjectModal from '@/components/dashboard/admin/EditSubjectModal';
@@ -28,7 +28,7 @@ export default function ManageSubjectsPage() {
             // ✅ PERBAIKAN: Gunakan client yang benar dan sesuaikan endpoint
             // baseURL '/api/classes' + '../subjects' -> '/api/subjects'
             // Tambahkan query parameter 'grade' jika ada
-            const response = await classContentApiClient.get('/subjects', {
+            const response = await apiClient.get('/subjects', {
                 params: selectedGrade ? { grade: selectedGrade } : {}
             });
             setSubjects(response.data);
@@ -54,7 +54,7 @@ export default function ManageSubjectsPage() {
             const loadingToast = toast.loading('Menghapus...');
             try {
                 // ✅ PERBAIKAN: Gunakan client yang benar dan sesuaikan endpoint
-                await classContentApiClient.delete(`/subjects/${subjectId}`);
+                await apiClient.delete(`/subjects/${subjectId}`);
                 toast.success('Mata pelajaran berhasil dihapus!', { id: loadingToast });
                 fetchData();
             } catch (error: any) {

@@ -2,12 +2,22 @@
 
 import { useState, useEffect, FormEvent } from 'react';
 // DIUBAH: Impor juga classContentApiClient
-import adminApiClient from '@/lib/axiosAdmin';
-import classContentApiClient from '@/lib/axiosClassContent'; 
+import apiClient from '@/lib/axios'; 
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
-import { Teacher, Subject, ClassInfo } from '@/types';
+import { ClassInfo } from './AddClassModal';
 
+export interface Subject {
+  id: number;
+  name: string;
+  grade: number;
+  Class: ClassInfo[]; 
+}
+
+export interface Teacher { 
+  id: number; 
+  fullName: string; 
+}
 interface EditClassModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -33,8 +43,8 @@ export default function EditClassModal({ isOpen, onClose, onClassUpdated, classD
                 try {
                     // DIUBAH: Menggunakan client yang benar untuk setiap data
                     const [teachersRes, subjectsRes] = await Promise.all([
-                        adminApiClient.get('/teachers'), // Benar: Data guru dari admin-service
-                        classContentApiClient.get('../subjects') // Benar: Data mapel dari class-content-service
+                        apiClient.get('/teachers'), // Benar: Data guru dari admin-service
+                        apiClient.get('/subjects') // Benar: Data mapel dari class-content-service
                     ]);
                     setTeachers(teachersRes.data);
                     setSubjects(subjectsRes.data);
@@ -62,7 +72,7 @@ export default function EditClassModal({ isOpen, onClose, onClassUpdated, classD
         const toastId = toast.loading("Memperbarui kelas...");
         try {
             // DIUBAH: Menggunakan client dan endpoint yang benar untuk update
-            await classContentApiClient.put(`/${classData.id}`, {
+            await apiClient.put(`/${classData.id}`, {
                 name,
                 description,
                 // Pastikan ID dikirim sebagai angka

@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import assignmentApiClient from '@/lib/axiosAssignment';
+import apiClient from '@/lib/axios';
 import { FaChartBar, FaBook, FaChevronLeft } from 'react-icons/fa';
 
 // Tipe data untuk nilai (tidak berubah)
@@ -39,7 +39,7 @@ export default function GradesPage() {
   useEffect(() => {
     const fetchAndGroupGrades = async () => {
       try {
-        const response = await assignmentApiClient.get(`../submissions/my-submissions`);
+        const response = await apiClient.get(`../submissions/my-submissions`);
         const grades: Grade[] = response.data;
 
         // --- PERUBAHAN 2: Pengelompokan Data ---

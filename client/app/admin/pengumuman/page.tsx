@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback, FormEvent } from 'react';
 // ✅ BENAR: API client ini sudah benar
-import announcementApiClient from '@/lib/axiosAnnouncement';
+import apiClient from '@/lib/axios';
 import toast from 'react-hot-toast'; // ✅ TAMBAHAN: Impor toast
 import { FaTrash } from 'react-icons/fa';
 
@@ -31,7 +31,7 @@ export default function ManageAnnouncementsPage() {
         try {
             // ✅ PERBAIKAN: Endpoint untuk GET semua pengumuman adalah '/'
             // baseURL '/api/announcements' + '/' -> '/api/announcements'
-            const response = await announcementApiClient.get(`/`);
+            const response = await apiClient.get(`/announcements`);
             setAnnouncements(response.data);
         } catch (error) {
             toast.error("Gagal memuat data pengumuman.");
@@ -51,7 +51,7 @@ export default function ManageAnnouncementsPage() {
         const toastId = toast.loading('Mengirim pengumuman...');
         try {
             // ✅ PERBAIKAN: Endpoint untuk POST pengumuman adalah '/'
-            await announcementApiClient.post('/', { title, content });
+            await apiClient.post('/announcements', { title, content });
             toast.success('Pengumuman berhasil dibuat!', { id: toastId });
             setTitle('');
             setContent('');
@@ -68,7 +68,7 @@ export default function ManageAnnouncementsPage() {
             const toastId = toast.loading('Menghapus pengumuman...');
             try {
                 // ✅ PERBAIKAN: Endpoint untuk DELETE adalah '/:id'
-                await announcementApiClient.delete(`/${id}`);
+                await apiClient.delete(`/announcements/${id}`);
                 toast.success('Pengumuman berhasil dihapus.', { id: toastId });
                 fetchData();
             } catch (error: any) {

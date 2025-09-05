@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
-import adminApiClient from '@/lib/axiosAdmin';
+import apiClient from '@/lib/axios';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import { FaArrowLeft } from 'react-icons/fa';
@@ -46,7 +46,7 @@ export default function EnrollManagementPage() {
         if (!classId) return;
         if (!data) setIsLoading(true);
         try {
-            const response = await adminApiClient.get(`/classes/${classId}/enrollments`);
+            const response = await apiClient.get(`/classes/${classId}/enrollments`);
             setData(response.data);
         } catch (error) {
             toast.error("Gagal memuat data.");
@@ -68,7 +68,7 @@ export default function EnrollManagementPage() {
         }
         try {
             // ✅ PERBAIKAN: Kirim studentId sebagai angka (integer)
-            await adminApiClient.post(`/classes/${classId}/enrollments`, {
+            await apiClient.post(`/classes/${classId}/enrollments`, {
                 studentId: parseInt(selectedStudentId, 10)
             });
             toast.success("Siswa berhasil didaftarkan!");
@@ -83,7 +83,7 @@ export default function EnrollManagementPage() {
     const handleUnenroll = async (studentId: number) => {
         if (window.confirm("Apakah Anda yakin ingin mengeluarkan siswa ini dari kelas?")) {
             try {
-                await adminApiClient.delete(`/classes/${classId}/enrollments/${studentId}`);
+                await apiClient.delete(`/classes/${classId}/enrollments/${studentId}`);
                 toast.success("Siswa berhasil dikeluarkan!");
                 fetchData();
             } catch (error: any) {
@@ -100,7 +100,7 @@ export default function EnrollManagementPage() {
         }
         try {
             // ✅ PERBAIKAN: Kirim teacherId sebagai angka (integer)
-            await adminApiClient.put(`/classes/${classId}/homeroom`, {
+            await apiClient.put(`/classes/${classId}/homeroom`, {
                 teacherId: parseInt(selectedTeacherId, 10)
             });
             toast.success("Wali kelas berhasil ditetapkan!");

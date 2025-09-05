@@ -2,7 +2,18 @@
 'use client';
 
 import { FaBullhorn } from 'react-icons/fa';
-import { Announcement } from '@/types'; 
+
+interface Author {
+  fullName: string;
+}
+
+interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  author: Author;
+  createdAt: string;
+}
 
 interface AnnouncementSectionProps {
   announcements: Announcement[];

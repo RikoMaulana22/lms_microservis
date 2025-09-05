@@ -3,7 +3,7 @@
 
 import { useState, FormEvent, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import userApiClient from '@/lib/axiosUser';
+import apiClient from '@/lib/axios';
 import toast from 'react-hot-toast';
 import { FaUserEdit, FaLock, FaChevronLeft } from 'react-icons/fa';
 import Link from 'next/link';
@@ -38,10 +38,10 @@ export default function ProfilePage() {
         
         try {
             // ✅ PERBAIKAN: Endpoint yang benar adalah '/profile'
-            await userApiClient.put('/profile', { fullName });
+            await apiClient.put('/profile', { fullName });
             
             // ✅ PERBAIKAN: Ambil ulang data user dan perbarui konteks
-            const updatedUserResponse = await userApiClient.get('/profile');
+            const updatedUserResponse = await apiClient.get('/profile');
             const token = Cookies.get('token'); // Ambil token saat ini dari cookie
             if (token) {
                 login(token, updatedUserResponse.data); // Perbarui konteks dengan data baru
@@ -67,7 +67,7 @@ export default function ProfilePage() {
 
         try {
             // ✅ PERBAIKAN: Endpoint yang benar adalah '/change-password'
-            await userApiClient.put('/change-password', { currentPassword, newPassword });
+            await apiClient.put('/change-password', { currentPassword, newPassword });
             toast.success('Password berhasil diubah!', { id: toastId });
             setCurrentPassword('');
             setNewPassword('');

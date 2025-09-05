@@ -1,8 +1,22 @@
 'use client';
 
 import Link from 'next/link';
-import { ClassSummary } from '@/types';
-
+export interface ClassSummary {
+  id: number;
+  name: string;
+  description: string | null;
+  imageUrl?: string | null; 
+  subject: {
+    name: string;
+  };
+  Teacher: {
+    fullName: string;
+    id: number;
+  };
+  _count: {
+    members: number;
+  };
+}
 // Komponen Skeleton untuk kartu kelas (diasumsikan sudah ada)
 const ClassCardSkeleton = () => (
   <div className="border p-4 rounded-lg bg-gray-50 animate-pulse">
@@ -19,7 +33,7 @@ interface MyClassesSectionProps {
 
 export default function MyClassesSection({ isLoading, myClasses }: MyClassesSectionProps) {
   // Ambil URL backend dari environment variable untuk membangun path gambar
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5007';
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL 
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
@@ -52,7 +66,7 @@ export default function MyClassesSection({ isLoading, myClasses }: MyClassesSect
                     <div>
                       <h3 className="font-bold text-lg text-gray-800">{cls.name}</h3>
                       <p className="text-sm text-gray-500">{cls.subject.name}</p>
-                      <p className="text-xs text-gray-400 mt-1">Oleh: {cls.teacher.fullName}</p>
+                      <p className="text-xs text-gray-400 mt-1">Oleh: {cls.Teacher.fullName}</p>
                     </div>
                     <p className="text-sm mt-4 font-semibold text-gray-700">{cls._count.members} Siswa</p>
                   </div>

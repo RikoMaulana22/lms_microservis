@@ -2,7 +2,7 @@
 'use client';
 
 import React,{ useState, useEffect, useMemo } from 'react';
-import homeroomApiClient from '@/lib/axiosHomeroom';
+import apiClient from '@/lib/axios';
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import autoTable, { RowInput } from 'jspdf-autotable';
@@ -124,7 +124,7 @@ export default function ViewTranscriptModal({ student, className, onClose }: Vie
     useEffect(() => {
         if (!student) return;
         setIsLoading(true);
-        homeroomApiClient.get(`/homeroom/student/${student.id}`)
+        apiClient.get(`/homeroom/student/${student.id}`)
             .then(res => setDetails(res.data))
             .catch(() => toast.error("Gagal memuat detail transkrip."))
             .finally(() => setIsLoading(false));

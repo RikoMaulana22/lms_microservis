@@ -2,7 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 // DIUBAH: Impor client yang benar untuk class-content-service
-import classContentApiClient from '@/lib/axiosClassContent';
+import apiClient from '@/lib/axios';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
 
@@ -28,7 +28,7 @@ export default function AddSubjectModal({ isOpen, onClose, onSubjectAdded }: Add
     const loadingToast = toast.loading('Menambahkan mata pelajaran...');
     try {
       // DIUBAH: Menggunakan client yang benar dan endpoint yang disesuaikan
-      await classContentApiClient.post('../subjects', {
+      await apiClient.post('../subjects', {
         ...formData,
         grade: parseInt(formData.grade, 10), // Kirim grade sebagai angka
       });

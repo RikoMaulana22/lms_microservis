@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import scheduleApiClient from '@/lib/axiosSchedule';
+import apiClient from '@/lib/axios';
 import { FaTrash } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import AddScheduleModal from '@/components/dashboard/admin/AddScheduleModal';
@@ -27,7 +27,7 @@ export default function ManageSchedulesPage() {
         setIsLoading(true);
         try {
             // ✅ PERBAIKAN: Panggil endpoint root ('/') dari baseURL
-            const response = await scheduleApiClient.get('/');
+            const response = await apiClient.get('/');
             setSchedules(response.data);
         } catch (error: any) {
             if (error.response?.status === 403) {
@@ -53,7 +53,7 @@ export default function ManageSchedulesPage() {
     // Fungsi handleDelete sudah benar
     const handleDelete = async (scheduleId: number) => {
         toast.promise(
-            scheduleApiClient.delete(`/${scheduleId}`),
+            apiClient.delete(`/${scheduleId}`),
             {
                 loading: 'Menghapus jadwal...',
                 success: 'Jadwal berhasil dihapus!',

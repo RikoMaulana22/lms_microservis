@@ -4,7 +4,7 @@ import { useState, FormEvent } from 'react';
 import axios from 'axios';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import userApiClient from '@/lib/axiosUser'; // Mengganti import axios
+import apiClient from '@/lib/axios'; // Mengganti import axios
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -22,7 +22,7 @@ export default function LoginPage() {
 
     try {
       
-      const response = await userApiClient.post('/auth/login', {
+      const response = await apiClient.post('/auth/login', {
         username,
         password,
       });

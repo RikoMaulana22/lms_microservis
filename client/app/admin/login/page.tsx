@@ -2,7 +2,7 @@
 
 import { useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import userApiClient from '@/lib/axiosUser'; // Import userApiClient
+import apiClient from '@/lib/axios'; // Import userApiClient
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function AdminLoginPage() {
@@ -27,7 +27,7 @@ export default function AdminLoginPage() {
         setIsLoading(true);
         setError(null);
         try {
-            const response = await userApiClient.post(`/auth/login`, {
+            const response = await apiClient.post(`/auth/login`, {
                 username,
                 password,
             });
