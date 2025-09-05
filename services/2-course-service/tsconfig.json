@@ -1,28 +1,37 @@
 {
   "compilerOptions": {
-    "target": "es2020",                        // Versi JavaScript yang dikompilasi
-    "module": "commonjs",                      // Sistem modul Node.js
-    "rootDir": "./src",                        // Folder tempat file TypeScript berada
-    "outDir": "./dist",                        // Output hasil kompilasi
-    "strict": true,                            // Aktifkan pemeriksaan ketat
-    "esModuleInterop": true,                   // Diperlukan untuk impor module CommonJS (seperti express, dotenv)
-    "moduleResolution": "node",                // Resolusi module standar Node.js
-    "resolveJsonModule": true,                 // Izinkan import file .json
-    "skipLibCheck": true, 
-    "typeRoots": [
-      "./node_modules/@types",
-      "../../shared/src/types" // <<< TAMBAHKAN BARIS INI
-    ],                     // Lewati pemeriksaan deklarasi file
-    "forceConsistentCasingInFileNames": true ,
-    "types": ["node"] ,
+    "target": "es2020",
+    "module": "commonjs",
+    "rootDir": "./",
+    "outDir": "./dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["node"],
     "baseUrl": "./src",
     "paths": {
       "shared/*": [
-        "../../shared/src/*" // Petakan 'shared/*' ke folder src di dalam paket shared
+        "../../shared/src/*"
       ],
-      "@/*": ["./*"]                        // Alias untuk impor dari folder src
-    } // Cegah perbedaan huruf besar/kecil di import
+      "@/*": [
+        "./*"
+      ]
+    },
+    "typeRoots": [
+      "./node_modules/@types",
+      "../../shared/src/types"
+    ]
   },
-  "include": ["src/**/*"],                     // Sertakan semua file .ts di dalam folder src
-  "exclude": ["node_modules", "dist"]          // Abaikan folder build dan dependency
+  "include": [
+    "src/**/*.ts",
+    "prisma/**/*.ts",
+    "scripts/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }
