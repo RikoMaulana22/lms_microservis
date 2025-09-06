@@ -2,27 +2,50 @@
 
 import express, { Request, Response, NextFunction } from 'express';
 import { createProxyMiddleware, Options } from 'http-proxy-middleware';
-import morgan from 'morgan'; // Untuk logging
-import cors from 'cors'; // Untuk CORS
-import helmet from 'helmet'; // Untuk keamanan header
-import rateLimit from 'express-rate-limit'; // Untuk rate limiting
-import http from 'http'; // Import modul http
+import morgan from 'morgan';
+import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import http from 'http';
 
-// Inisialisasi aplikasi Express
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 4000;
 
 // ==================================================================
 // MIDDLEWARE KEAMANAN & LOGGING
 // ==================================================================
 
-app.use(cors());
+// --- KONFIGURASI CORS YANG BENAR DAN LENGKAP ---
+const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001'];
+
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Origin ini tidak diizinkan oleh kebijakan CORS'));
+    }
+  },
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+  optionsSuccessStatus: 204
+};
+
+// **KUNCI UTAMA 1**: Terapkan CORS sebagai middleware PERTAMA
+app.use(cors(corsOptions));
+
+// **KUNCI UTAMA 2**: Tangani SEMUA permintaan preflight (OPTIONS) secara eksplisit
+// Ini akan merespons browser SEBELUM permintaan diteruskan ke proxy
+app.options('*', cors(corsOptions));
+// --- BATAS AKHIR KONFIGURASI CORS ---
+
+// Middleware lainnya bisa setelah CORS
 app.use(helmet());
 app.use(morgan('dev'));
 
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 menit
-  max: 100, // Batasi setiap IP hingga 100 permintaan per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   standardHeaders: true,
   legacyHeaders: false,
   message: 'Terlalu banyak permintaan dari IP ini, silakan coba lagi setelah 15 menit',
@@ -30,9 +53,8 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // ==================================================================
-// KONFIGURASI PROXY
+// KONFIGURASI PROXY (INI HARUS SETELAH SEMUA MIDDLEWARE DI ATAS)
 // ==================================================================
-
 const serviceUrls = {
   user: process.env.USER_SERVICE_URL || 'http://localhost:5001',
   course: process.env.COURSE_SERVICE_URL || 'http://localhost:5002',
@@ -41,15 +63,14 @@ const serviceUrls = {
   admin: process.env.ADMIN_SERVICE_URL || 'http://localhost:5005',
 };
 
-// --- PERBAIKAN UTAMA DI SINI ---
-// Opsi proxy dengan penanganan error menggunakan event 'on'
 const proxyOptions: Options = {
   changeOrigin: true,
+   pathRewrite: {
+    '^/api': '', // Ini akan mengubah /api/auth/login menjadi /auth/login
+  },
   on: {
     error: (err, req, res, target) => {
       console.error(`Proxy Error menargetkan ${target}:`, err);
-
-      // Pastikan 'res' adalah objek http.ServerResponse dan header belum dikirim
       if (res instanceof http.ServerResponse && !res.headersSent) {
         res.writeHead(503, { 'Content-Type': 'application/json' });
         res.end(
@@ -63,11 +84,10 @@ const proxyOptions: Options = {
   },
 };
 
-// Definisikan rute proxy
-// Kita bisa membuat fungsi kecil agar tidak mengulang target di log error
 const createProxy = (target: string) =>
   createProxyMiddleware({ ...proxyOptions, target });
 
+app.use('/api/auth', createProxy(serviceUrls.user));
 app.use('/api/users', createProxy(serviceUrls.user));
 app.use('/api/courses', createProxy(serviceUrls.course));
 app.use('/api/grading', createProxy(serviceUrls.grading));

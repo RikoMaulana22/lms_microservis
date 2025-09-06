@@ -8,23 +8,25 @@ import userRoutes from './routes/user.routes';
 dotenv.config();
 
 const app = express();
-// --- PERBAIKAN UTAMA DI SINI ---
-// Gunakan port dari .env, atau default ke 5000 agar sesuai dengan error Anda
 const PORT = process.env.PORT || 5001;
 
-// Konfigurasi CORS yang lebih spesifik
-const corsOptions = {
-  origin: ['http://localhost:3000', 'http://localhost:3001'], // Tambahkan semua origin frontend Anda
+// Konfigurasi CORS yang sama seperti di Gateway
+const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001'];
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Origin ini tidak diizinkan oleh kebijakan CORS'));
+    }
+  },
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,
-  optionsSuccessStatus: 204 // Untuk browser lama
 };
 
-// Aktifkan penanganan preflight untuk semua rute
-app.options('*', cors(corsOptions));
-
-// Gunakan middleware cors dengan opsi yang telah ditentukan
+// Terapkan CORS dan handler preflight
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.use(express.json());
 
@@ -33,8 +35,8 @@ app.get('/', (req, res) => {
 });
 
 // Daftarkan rute
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
+app.use('/auth', authRoutes);
+app.use('/users', userRoutes); 
 
 app.listen(PORT, () => {
   console.log(`🚀 User Service running on http://localhost:${PORT}`);
