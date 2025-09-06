@@ -2,14 +2,16 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-// ✅ PERBAIKAN: Gunakan js-cookie agar konsisten dengan halaman login
 import Cookies from 'js-cookie';
-import { jwtDecode } from 'jwt-decode';
-import userApiClient from '@/lib/axiosUser';
-// ✅ PERBAIKAN: Impor tipe User yang lengkap dari sumber utama
-import { User } from '@/types';
+import apiClient from '@/lib/axios'; // Menggunakan apiClient utama
 
-
+// Definisikan tipe User yang lebih spesifik
+export interface User {
+    id: number | string;
+    fullName: string;
+    email: string;
+    role: 'admin' | 'wali_kelas' | 'guru' | 'siswa';
+}
 
 interface AuthContextType {
     user: User | null;
@@ -22,31 +24,41 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(true); // Mulai dengan loading
     const router = useRouter();
     const pathname = usePathname();
 
     useEffect(() => {
-        // ✅ PERBAIKAN: Gunakan Cookies.get() untuk mengambil token
-        const token = Cookies.get('token');
-        
-        console.log("Token yang dipakai:", token);
-        if (token) {
-            try {
-                // Langsung decode token untuk mendapatkan data user awal
-                const decodedUser: User = jwtDecode(token);
-                setUser(decodedUser);
-            } catch (error) {
-                console.error("Token tidak valid atau kadaluarsa:", error);
-                Cookies.remove('token'); // Hapus token yang tidak valid
+        const validateToken = async () => {
+            const token = Cookies.get('token');
+            
+            if (token) {
+                try {
+                    // --- PERBAIKAN UTAMA ---
+                    // Validasi token ke server untuk mendapatkan data user yang fresh
+                    const response = await apiClient.get('/auth/me', {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    });
+                    setUser(response.data);
+                } catch (error) {
+                    console.error("Gagal memvalidasi token:", error);
+                    // Hapus token yang tidak valid jika ada error
+                    Cookies.remove('token');
+                    setUser(null);
+                }
             }
-        }
-        setIsLoading(false);
+            setIsLoading(false);
+        };
+
+        validateToken();
     }, []);
 
     const login = (token: string, userData: User) => {
-        // ✅ PERBAIKAN: Gunakan Cookies.set() untuk menyimpan token
+        // Simpan token di cookies
         Cookies.set('token', token, { expires: 1, secure: process.env.NODE_ENV === 'production' });
+        // Set data user di state
         setUser(userData);
 
         // Arahkan pengguna berdasarkan peran
@@ -60,17 +72,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const logout = () => {
-        // ✅ PERBAIKAN: Gunakan Cookies.remove() untuk menghapus token
         Cookies.remove('token');
         setUser(null);
         
         // Arahkan ke halaman login yang sesuai
         if (pathname.startsWith('/admin')) {
             router.push('/admin/login');
-        } else if (pathname.startsWith('/dashboard/wali-kelas')) {
-            router.push('/login/wali-kelas');
-        }
-        else {
+        } else {
             router.push('/login');
         }
     };

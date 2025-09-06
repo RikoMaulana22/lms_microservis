@@ -15,7 +15,6 @@ const PORT = process.env.PORT || 4000;
 // MIDDLEWARE KEAMANAN & LOGGING
 // ==================================================================
 
-// --- KONFIGURASI CORS YANG BENAR DAN LENGKAP ---
 const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001'];
 
 const corsOptions: cors.CorsOptions = {
@@ -31,15 +30,9 @@ const corsOptions: cors.CorsOptions = {
   optionsSuccessStatus: 204
 };
 
-// **KUNCI UTAMA 1**: Terapkan CORS sebagai middleware PERTAMA
 app.use(cors(corsOptions));
-
-// **KUNCI UTAMA 2**: Tangani SEMUA permintaan preflight (OPTIONS) secara eksplisit
-// Ini akan merespons browser SEBELUM permintaan diteruskan ke proxy
 app.options('*', cors(corsOptions));
-// --- BATAS AKHIR KONFIGURASI CORS ---
 
-// Middleware lainnya bisa setelah CORS
 app.use(helmet());
 app.use(morgan('dev'));
 
@@ -53,7 +46,7 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // ==================================================================
-// KONFIGURASI PROXY (INI HARUS SETELAH SEMUA MIDDLEWARE DI ATAS)
+// KONFIGURASI PROXY
 // ==================================================================
 const serviceUrls = {
   user: process.env.USER_SERVICE_URL || 'http://localhost:5001',
@@ -63,11 +56,10 @@ const serviceUrls = {
   admin: process.env.ADMIN_SERVICE_URL || 'http://localhost:5005',
 };
 
+// --- PERBAIKAN DI SINI ---
+// Hapus pathRewrite dari proxyOptions bersama
 const proxyOptions: Options = {
   changeOrigin: true,
-   pathRewrite: {
-    '^/api': '', // Ini akan mengubah /api/auth/login menjadi /auth/login
-  },
   on: {
     error: (err, req, res, target) => {
       console.error(`Proxy Error menargetkan ${target}:`, err);
@@ -84,15 +76,44 @@ const proxyOptions: Options = {
   },
 };
 
-const createProxy = (target: string) =>
-  createProxyMiddleware({ ...proxyOptions, target });
+// Terapkan pathRewrite secara spesifik untuk setiap rute
+app.use('/api/auth', createProxyMiddleware({
+  ...proxyOptions,
+  target: serviceUrls.user,
+  pathRewrite: { '^/api/auth': '/auth' }, // /api/auth/login -> /auth/login
+}));
 
-app.use('/api/auth', createProxy(serviceUrls.user));
-app.use('/api/users', createProxy(serviceUrls.user));
-app.use('/api/courses', createProxy(serviceUrls.course));
-app.use('/api/grading', createProxy(serviceUrls.grading));
-app.use('/api/attendance', createProxy(serviceUrls.attendance));
-app.use('/api/admin', createProxy(serviceUrls.admin));
+app.use('/api/users', createProxyMiddleware({
+  ...proxyOptions,
+  target: serviceUrls.user,
+  pathRewrite: { '^/api/users': '/users' }, // /api/users/1 -> /users/1
+}));
+
+app.use('/api/courses', createProxyMiddleware({
+  ...proxyOptions,
+  target: serviceUrls.course,
+  pathRewrite: { '^/api/courses': '/courses' },
+}));
+
+app.use('/api/grading', createProxyMiddleware({
+  ...proxyOptions,
+  target: serviceUrls.grading,
+  pathRewrite: { '^/api/grading': '/grading' },
+}));
+
+app.use('/api/attendance', createProxyMiddleware({
+  ...proxyOptions,
+  target: serviceUrls.attendance,
+  pathRewrite: { '^/api/attendance': '/attendance' },
+}));
+
+app.use('/api/admin', createProxyMiddleware({
+  ...proxyOptions,
+  target: serviceUrls.admin,
+  pathRewrite: { '^/api/admin': '/admin' },
+}));
+// --- BATAS AKHIR PERBAIKAN ---
+
 
 // ==================================================================
 // PENANGANAN RUTE TIDAK DITEMUKAN & ERROR GLOBAL

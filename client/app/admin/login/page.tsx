@@ -33,7 +33,6 @@ export default function AdminLoginPage() {
             });
             const { token, user } = response.data;
             login(token, user);
-            //router.push('/admin/pengguna'); 
         } catch (err: any) {
             setError(err.response?.data?.message || 'Login gagal. Silakan coba lagi.');
         } finally {
